@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "925826885333",
+    "project_id": "spiderx-4fcb7",
+    "storage_bucket": "spiderx-4fcb7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925826885333:android:76f2c909982447f5bf645c",
+        "android_client_info": {
+          "package_name": "com.company.spiderX"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCl0S3xT6YUlnFvePOmqYs3mEFW7Q6jxOo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
