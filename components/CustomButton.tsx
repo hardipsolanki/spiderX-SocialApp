@@ -1,17 +1,17 @@
 // components/CustomButton.tsx
 import React from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 import { CustomButtonProps } from "../types";
 
 const CustomButton: React.FC<CustomButtonProps> = ({
   title,
   onPress,
-  variant = "primary",
+  variant = "secondary",
   disabled = false,
   loading = false,
   style = {},

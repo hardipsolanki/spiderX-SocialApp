@@ -1,6 +1,11 @@
 import CustomButton from "@/components/CustomButton";
 import { TEXTS } from "@/constants/texts";
-import { authServices } from "@/firebase/auth";
+import {
+  getCurrentUserThunk,
+  phoneLoginThunk,
+  verifyOtpThunk,
+} from "@/features/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -19,14 +24,15 @@ const RESEND_TIMER = 30;
 
 export default function VerifyOtp() {
   const { phone } = useLocalSearchParams<{ phone: string }>();
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const isLoading = useAppSelector((state) => state.auth.isLoading);
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [timer, setTimer] = useState(RESEND_TIMER);
   const [canResend, setCanResend] = useState(false);
   const inputs = useRef<TextInput[]>([]);
 
-  // ✅ Resend countdown timer
+  //  Resend countdown timer
   useEffect(() => {
     if (timer === 0) {
       setCanResend(true);
@@ -56,44 +62,55 @@ export default function VerifyOtp() {
   const handleVerify = async () => {
     const code = otp.join("");
     if (code.length !== OTP_LENGTH) return;
-    setLoading(true);
-    try {
-      const result = await authServices.confirmCode(phone, code);
-      if (result.user) {
-        router.replace("/(root)");
-      }
-    } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Something went wrong",
+    dispatch(verifyOtpThunk({ phone: phone, otp: code }))
+      .unwrap()
+      .then((result) => {
+        if (result) {
+          dispatch(getCurrentUserThunk())
+            .unwrap()
+            .then((data) => {
+              if (data) {
+                Toast.show({
+                  type: "success",
+                  text1: "Success",
+                  text2: "OTP verified successfully",
+                });
+                router.replace("/interests");
+              }
+            });
+        }
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: error || "Something went wrong",
+        });
       });
-    } finally {
-      setLoading(false);
-    }
   };
 
-  // ✅ Resend OTP
+  //  Resend OTP
   const handleResend = async () => {
     if (!canResend) return;
-    try {
-      await authServices.signInWithPhoneNumber(`+91${phone}`);
-      setOtp(Array(OTP_LENGTH).fill(""));
-      setTimer(RESEND_TIMER);
-      setCanResend(false);
-      inputs.current[0]?.focus();
-      Toast.show({
-        type: "success",
-        text1: "OTP Sent",
-        text2: `OTP resent to +91${phone}`,
+    dispatch(phoneLoginThunk(phone))
+      .unwrap()
+      .then((result) => {
+        if (result) {
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "OTP sent successfully",
+          });
+          router.replace("/(auth)/verifyOtp");
+        }
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: error.message || "Something went wrong",
+        });
       });
-    } catch (error: any) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Failed to resend OTP",
-      });
-    }
   };
 
   const isComplete = otp.every((d) => d !== "");
@@ -174,17 +191,17 @@ export default function VerifyOtp() {
         {/* BUTTON */}
         <View style={styles.buttonContainer}>
           <CustomButton
-            title={loading ? "Verifying..." : TEXTS.OTP.BUTTON}
+            title={isLoading === "pending" ? "Verifying..." : TEXTS.OTP.BUTTON}
             onPress={handleVerify}
-            loading={loading}
-            disabled={!isComplete || loading}
+            loading={isLoading === "pending"}
+            disabled={isLoading === "pending" || !isComplete}
           />
         </View>
 
         {/* CHANGE NUMBER */}
         <TouchableOpacity
           style={styles.changeNumber}
-          onPress={() => router.back()}
+          onPress={() => router.push("/phoneLogin")}
         >
           <Text style={styles.changeNumberText}>
             Wrong number? <Text style={styles.changeNumberLink}>Change</Text>

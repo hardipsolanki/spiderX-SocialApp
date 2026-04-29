@@ -1,7 +1,8 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import { TEXTS } from "@/constants/texts";
-import { authServices } from "@/firebase/auth";
+import { phoneLoginThunk } from "@/features/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 type PhoneForm = {
   phone: string;
@@ -23,26 +25,37 @@ type PhoneForm = {
 
 export default function PhoneLogin() {
   const router = useRouter();
-
+  const dispatch = useAppDispatch();
+  const isLoading = useAppSelector((state) => state.auth.isLoading);
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isValid },
   } = useForm<PhoneForm>({
     defaultValues: { phone: "" },
     mode: "onChange",
   });
 
   const onSubmit = async (data: PhoneForm) => {
-    try {
-      await authServices.signInWithPhoneNumber(`+91${data.phone}`);
-      router.push({
-        pathname: "/verifyOtp",
-        params: { phone: data.phone },
+    dispatch(phoneLoginThunk(`+91${data.phone}`))
+      .unwrap()
+      .then((result) => {
+        if (result) {
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "OTP sent successfully",
+          });
+          router.replace("/(auth)/verifyOtp");
+        }
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: error.message || "Something went wrong",
+        });
       });
-    } catch (error) {
-      console.log("error on authWithPhone: ", error);
-    }
   };
 
   return (
@@ -134,10 +147,12 @@ export default function PhoneLogin() {
           {/* BUTTON */}
           <View style={styles.buttonContainer}>
             <CustomButton
-              title={isSubmitting ? "Sending OTP..." : TEXTS.PHONE.BUTTON}
+              title={
+                isLoading === "pending" ? "Sending OTP..." : TEXTS.PHONE.BUTTON
+              }
               onPress={handleSubmit(onSubmit)}
-              loading={isSubmitting}
-              disabled={!isValid || isSubmitting}
+              loading={isLoading === "pending"}
+              disabled={isLoading === "pending"}
             />
           </View>
 

@@ -46,12 +46,12 @@ export default function Welcome() {
 
           {/* LOGIN */}
           <Text style={styles.loginText}>
-            Already have an account?{" "}
+            Don't have an account?{" "}
             <Text
               style={styles.loginLink}
-              onPress={() => router.push("/phoneLogin")}
+              onPress={() => router.push("/(auth)/signup")}
             >
-              Login
+              Sign Up
             </Text>
           </Text>
         </View>

@@ -1,10 +1,11 @@
 import { CreateUser } from '@/types';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
+
 class Authentication {
-    confirmation: any;
-    usersCollection = firestore().collection('users');
+    private confirmation: any;
+    private usersCollection = firestore().collection('users');
+    private addInterestsCollection = firestore().collection('user-interests');
     async signInWithPhoneNumber(phoneNumber: string) {
         try {
             const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
@@ -27,13 +28,7 @@ class Authentication {
                     .where("uid", "==", result.user.uid)
                     .get();
                 const userDoc = snapshot.docs[0];
-                if (userDoc?.exists()) {
-                    await userDoc.ref.set({
-                        lastLoginAt: new Date(),
-                    },
-                        { merge: true }
-                    );
-                } else {
+                if (!userDoc?.exists()) {
                     const snapshot = await this.usersCollection
                         .where("phone_number", "==", phoneNumber)
                         .get();
@@ -41,16 +36,15 @@ class Authentication {
                         throw new Error("User not found");
                     } else {
                         snapshot.docs[0].ref.set({
-                            lastLoginAt: new Date(),
                             uid: result.user.uid
                         },
                             { merge: true }
                         );
                     }
-                }
+                } else return userDoc.data();
             }
 
-            return result;
+            return result.user.uid;
         } catch (error) {
             console.log("Error confirming code:", error);
             throw error;
@@ -58,8 +52,18 @@ class Authentication {
     }
     async createUser(user: CreateUser) {
         try {
-            const useDoc = await this.usersCollection.doc(user.email).get()
-            if (!!useDoc.exists) {
+            const emailSnapshot = await this.usersCollection
+                .where("email", "==", user.email)
+                .get();
+
+            // check phone
+            const phoneSnapshot = await this.usersCollection
+                .where("phone_number", "==", user.phone_number)
+                .get();
+            if (!emailSnapshot.empty || !phoneSnapshot.empty) {
+                throw new Error("User already exists");
+            }
+            if (!emailSnapshot.empty || !phoneSnapshot.empty) {
                 throw new Error("User already exists");
             }
             const result = await this.usersCollection.add(user)
@@ -70,14 +74,59 @@ class Authentication {
             throw error;
         }
     }
-    async uploadAvatar(uri: string): Promise<string> {
-        const filename = `avatars/${Date.now()}.jpg`
-        const ref = storage().ref(filename)
+    async getUser() {
+        try {
+            const user = auth().currentUser;
+            if (user) {
+                const snapshot = await this.usersCollection
+                    .where("uid", "==", user.uid)
+                    .get();
+                if (!snapshot.empty) {
+                    return snapshot.docs[0].data();
+                }
+            } else throw new Error("User not found");
 
-        await ref.putFile(uri)
-        const url = await ref.getDownloadURL()
-        return url
+        } catch (error) {
+            console.log("Error getting user:", error);
+            throw error;
+        }
     }
+    async getUserRef(uid: string) {
+        try {
+            const snapshot = await this.usersCollection
+                .where("uid", "==", uid)
+                .get();
+            if (!snapshot.empty) {
+                return snapshot.docs[0].ref;
+            }
+        } catch (error) {
+            console.log("Error getting user:", error);
+            throw error;
+        }
+    }
+    async getUsersWithInterests() {
+        try {
+            const snapshot = await this.addInterestsCollection.get();
+            const result = await Promise.all(
+                snapshot.docs.map(async (doc) => {
+                    const data = doc.data();
+                    if (data.user) {
+                        const userSnap = await data.user.get()
+                        return {
+                            id: doc.id,
+                            interest: data.interest,
+                            user: userSnap.data(),
+                        };
+                    }
+                })
+            );
+            return result[1]
+        } catch (error) {
+            console.log("Error getting users with interests:", error);
+            throw error;
+        }
+    }
+
 
 }
 

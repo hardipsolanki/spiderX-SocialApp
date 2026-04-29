@@ -1,3 +1,4 @@
+
 // constants/texts.js
 export const TEXTS = {
   PHONE: {
@@ -52,5 +53,22 @@ export const TEXTS = {
     ERROR: "Something went wrong",
     ERROR_REQUIRED: "Please fill required fields",
   },
+
+  INTERESTS: {
+    TITLE: "What are your interests?",
+    SUBTITLE: "Select your interests to help us find better connections for you.",
+    BUTTON: "Continue",
+    SUCCESS: "Interests saved successfully!",
+    LOADING: "Saving your interests...",
+  },
+
+  HOME: {
+    GREETING: "Hi, John 👋",
+    SUBTITLE: "Discover and connect with amazing people",
+    SEARCH: "Search users by name or interest",
+    SECTION: "People You May Know",
+    VIEW_ALL: "View All",
+  },
+
 
 };

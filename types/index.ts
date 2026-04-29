@@ -81,5 +81,11 @@ export interface User {
     designation: string;
     location: string;
     createdAt?: Date;
-    lastLoginAt: Date;
+}
+
+export interface UserInterest {
+  id: string;
+  name: string;
+  icon?: string;
+  selected: boolean;
 }

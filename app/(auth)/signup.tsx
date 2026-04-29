@@ -1,7 +1,8 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import { TEXTS } from "@/constants/texts";
-import { authServices } from "@/firebase/auth";
+import { createUserThunk } from "@/features/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { CreateUser } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -24,13 +25,12 @@ import Toast from "react-native-toast-message";
 export default function SignUp() {
   const router = useRouter();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-
+  const dispatch = useAppDispatch();
+  const isLoading = useAppSelector((state) => state.auth.isLoading);
   const {
     control,
     handleSubmit,
-    setValue,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<CreateUser>({
     defaultValues: {
       first_name: "",
@@ -44,7 +44,7 @@ export default function SignUp() {
     mode: "onChange",
   });
 
-  // ✅ Image Picker
+  //  Image Picker
   const pickImage = async () => {
     // Permission mango
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -60,47 +60,46 @@ export default function SignUp() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, // ✅ Crop karva dese
-      aspect: [1, 1], // ✅ Square crop
-      quality: 0.7, // ✅ Compress karso
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
     });
-
     if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setAvatarUri(base64Image);
     }
   };
 
   const onSubmit = async (data: CreateUser) => {
-    try {
-      setUploading(true);
-
-      let avatarURL = "";
-
-      // ✅ Image hoy to Firebase Storage ma upload karo
-      if (avatarUri) {
-        avatarURL = await authServices.uploadAvatar(avatarUri);
-      }
-
-      const res = await authServices.createUser({
-        ...data,
-        avatar: avatarURL, // ✅ Firebase URL store karo
-      });
-
-      if (res) {
-        router.replace("/");
-      }
-    } catch (error: any) {
+    if (!avatarUri) {
       Toast.show({
         type: "error",
-        text1: "Error",
-        text2: error.message || "Something went wrong",
+        text1: "Avatar is required",
+        text2: "Please select an avatar",
       });
-    } finally {
-      setUploading(false);
+      return;
     }
+    dispatch(createUserThunk(data))
+      .unwrap()
+      .then((result) => {
+        if (result) {
+          Toast.show({
+            type: "success",
+            text1: "Success",
+            text2: "User created successfully",
+          });
+          router.replace("/(auth)/phoneLogin");
+        }
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: "Error",
+          text2: error.message || "Something went wrong",
+        });
+      });
   };
-
-  const isLoading = isSubmitting || uploading;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -225,18 +224,20 @@ export default function SignUp() {
               )}
             />
 
-            <View style={styles.divider} />
+            {/* <View style={styles.divider} /> */}
 
             {/* Optional Fields */}
             <Controller
               control={control}
               name="designation"
+              rules={{ required: "Designation is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Designation"
                   placeholder="Developer"
                   value={value}
                   onChangeText={onChange}
+                  error={errors.designation?.message}
                 />
               )}
             />
@@ -244,12 +245,14 @@ export default function SignUp() {
             <Controller
               control={control}
               name="location"
+              rules={{ required: "Location is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Location"
                   placeholder="India"
                   value={value}
                   onChangeText={onChange}
+                  error={errors.location?.message}
                 />
               )}
             />
@@ -258,16 +261,10 @@ export default function SignUp() {
           {/* BUTTON */}
           <View style={styles.buttonContainer}>
             <CustomButton
-              title={
-                uploading
-                  ? "Uploading photo..."
-                  : isSubmitting
-                    ? "Creating Account..."
-                    : TEXTS.SIGNUP.BUTTON
-              }
+              title={TEXTS.SIGNUP.BUTTON}
               onPress={handleSubmit(onSubmit)}
-              loading={isLoading}
-              disabled={!isValid || isLoading}
+              loading={isLoading === "pending"}
+              disabled={isLoading === "pending"}
             />
           </View>
 
