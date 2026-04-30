@@ -1,18 +1,14 @@
 import { COLORS } from "@/constants/colors";
 import { TEXTS } from "@/constants/texts";
 import React from "react";
-import { StyleSheet, Text } from "react-native";
-import SearchBar from "../SearchBar";
+import { StyleSheet, Text, View } from "react-native";
 
 const Header = () => {
   return (
-    <>
+    <View style={styles.sectionHeader}>
       <Text style={styles.title}>{TEXTS.HOME.GREETING}</Text>
       <Text style={styles.subtitle}>{TEXTS.HOME.SUBTITLE}</Text>
-
-      {/* SEARCH */}
-      <SearchBar placeholder={TEXTS.HOME.SEARCH} />
-    </>
+    </View>
   );
 };
 
@@ -29,10 +25,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-    marginBottom: 10,
+    padding: 10,
   },
   sectionTitle: {
     fontWeight: "600",

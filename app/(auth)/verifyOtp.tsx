@@ -1,10 +1,6 @@
 import CustomButton from "@/components/CustomButton";
 import { TEXTS } from "@/constants/texts";
-import {
-  getCurrentUserThunk,
-  phoneLoginThunk,
-  verifyOtpThunk,
-} from "@/features/authSlice";
+import { phoneLoginThunk, verifyOtpThunk } from "@/features/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -65,20 +61,10 @@ export default function VerifyOtp() {
     dispatch(verifyOtpThunk({ phone: phone, otp: code }))
       .unwrap()
       .then((result) => {
-        if (result) {
-          dispatch(getCurrentUserThunk())
-            .unwrap()
-            .then((data) => {
-              if (data) {
-                Toast.show({
-                  type: "success",
-                  text1: "Success",
-                  text2: "OTP verified successfully",
-                });
-                router.replace("/interests");
-              }
-            });
-        }
+        if (result?.avatar) {
+          if (result.interests.length) router.replace("/(tabs)/home");
+          else router.push("/(root)/interests");
+        } else router.replace("/createProfile");
       })
       .catch((error) => {
         Toast.show({

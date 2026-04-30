@@ -27,6 +27,16 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="invitations"
+        options={{
+          title: "Invitations",
+
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="notifications" size={22} color={color} />
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="search"

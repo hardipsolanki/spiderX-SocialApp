@@ -15,7 +15,7 @@ export const TEXTS = {
     BUTTON: "Next",
     RESEND: "Didn't receive a code? Resend",
   },
-  
+
   // Errors
   ERRORS: {
     INVALID_PHONE: 'Please enter a valid phone number',
@@ -25,7 +25,7 @@ export const TEXTS = {
     INVALID_PHONE_FORMAT: "Invalid phone number format. Please enter a valid phone number.",
     PHONE_REQUIRED: "Phone number is required.",
   },
-  
+
   // Success Messages
   SUCCESS: {
     OTP_SENT: 'OTP sent successfully!',
@@ -68,6 +68,34 @@ export const TEXTS = {
     SEARCH: "Search users by name or interest",
     SECTION: "People You May Know",
     VIEW_ALL: "View All",
+  },
+  PROFILE: {
+    NAME: "Emma Wilson",
+    VIEW_PROFILE: "View Profile",
+    SEARCH: "Search in Conversation",
+    NOTIFICATIONS: "Notifications",
+    MEDIA: "Media, Links & Files",
+    MUTE: "Mute Conversation",
+    CLEAR: "Clear Chat",
+    BLOCK: "Block User",
+    SEND_INVITATION: "Send Invitation",
+    ABOUT: "About",
+    MEMBER_SINCE: "Member since",
+  },
+  INVITATIONS: {
+    TITLE: "Invitations",
+    TAB_RECEIVED: "Received",
+    TAB_SENT: "Sent",
+    WANTS_TO_CONNECT: "Wants to connect",
+    DECLINE: "Decline",
+    ACCEPT: "Accept",
+    EMPTY: "No invitations yet",
+  },
+  NAV: {
+    HOME: "Home",
+    SEARCH: "Search",
+    CHATS: "Chats",
+    PROFILE: "Profile",
   },
 
 

@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,7 +34,7 @@ export default function PhoneLogin() {
     defaultValues: { phone: "" },
     mode: "onChange",
   });
-
+  console.log({ isLoading });
   const onSubmit = async (data: PhoneForm) => {
     dispatch(phoneLoginThunk(`+91${data.phone}`))
       .unwrap()
@@ -46,7 +45,10 @@ export default function PhoneLogin() {
             text1: "Success",
             text2: "OTP sent successfully",
           });
-          router.replace("/(auth)/verifyOtp");
+          router.replace({
+            pathname: "/(auth)/verifyOtp",
+            params: { phone: `+91${data.phone}` },
+          });
         }
       })
       .catch((error) => {
@@ -117,10 +119,10 @@ export default function PhoneLogin() {
                       value: 10,
                       message: "Enter valid 10 digit number",
                     },
-                    pattern: {
-                      value: /^[6-9]\d{9}$/,
-                      message: "Enter valid Indian mobile number",
-                    },
+                    // pattern: {
+                    //   value: /^[6-9]\d{9}$/,
+                    //   message: "Enter valid Indian mobile number",
+                    // },
                   }}
                   render={({ field: { onChange, value } }) => (
                     <CustomInput
@@ -162,17 +164,6 @@ export default function PhoneLogin() {
             <Text style={styles.dividerText}>OR</Text>
             <View style={styles.dividerLine} />
           </View>
-
-          {/* SIGNUP LINK */}
-          <TouchableOpacity
-            style={styles.signupBtn}
-            onPress={() => router.push("/signup")}
-          >
-            <Text style={styles.signupText}>
-              Don't have an account?{" "}
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
 
           {/* TERMS */}
           <Text style={styles.terms}>

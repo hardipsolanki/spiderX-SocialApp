@@ -1,15 +1,22 @@
 import { authServices } from "@/firebase/auth";
 import { CreateUser, User } from "@/types";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { REHYDRATE } from "redux-persist";
 
 // 🔥 Types
+
+
+export interface UsersWithInterests {
+    id: string;
+    interest: string[];
+    user: User;
+}
 interface AuthState {
     user: User | null;
     isLoading: "idle" | "pending" | "succeeded" | "failed";
-    usersWithInterests?: {
-        user: User;
-        interest: string[];
-    }
+    usersWithInterests?: Array<UsersWithInterests>
+    serachableUser?: Array<UsersWithInterests> | null
+    singleUser?: User
 }
 
 const initialState: AuthState = {
@@ -22,8 +29,8 @@ export const createUserThunk = createAsyncThunk(
     "auth/createUser",
     async (data: CreateUser, { rejectWithValue }) => {
         try {
-            const res = await authServices.createUser(data);
-            return res;
+            const res = await authServices.createProfile(data);
+            return res 
         } catch (error: any) {
             return rejectWithValue(error.message || "Something went wrong");
         }
@@ -35,7 +42,7 @@ export const verifyOtpThunk = createAsyncThunk(
     async ({ phone, otp }: { phone: string, otp: string }, { rejectWithValue }) => {
         try {
             const res = await authServices.confirmCode(phone, otp);
-            return res
+            return res as any
         } catch (error: any) {
             return rejectWithValue(error.message || "Login failed");
         }
@@ -56,7 +63,7 @@ export const getCurrentUserThunk = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await authServices.getUser();
-            return res as User;
+            return res as User
         } catch (error: any) {
             return rejectWithValue(error.message || "Current user fetch failed");
         }
@@ -68,34 +75,72 @@ export const getUsersWithInterestsThunk = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const res = await authServices.getUsersWithInterests();
-            return res
+            return res as Array<UsersWithInterests>
         } catch (error: any) {
             return rejectWithValue(error.message || "Current user fetch failed");
         }
     },
 )
 
+export const logoutThunk = createAsyncThunk(
+    "auth/logout",
+    async (_, { rejectWithValue }) => {
+        try {
+            await authServices.logOut();
+        } catch (error: any) {
+            return rejectWithValue(error.message || "Logout failed");
+        }
+    },
+)
+
+export const getSingleUserThunk = createAsyncThunk(
+    "auth/getSingleUser",
+    async (uid: string, { rejectWithValue }) => {
+        try {
+            const res = await authServices.getSingleUser(uid);
+            return res as User
+        } catch (error: any) {
+            return rejectWithValue(error.message || "Current user fetch failed");
+        }
+    },
+)
 
 const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
+        handleUserSearch: (state, action: { payload: { search: string } }) => {
+            const search = action.payload.search.toLowerCase();
 
-        resetAuthState: (state) => {
-            state.isLoading = "idle";
-        },
+            state.serachableUser =
+                state.usersWithInterests
+                    ?.filter((item) =>
+                        item.user.first_name.toLowerCase().includes(search)
+                    )
+                    .sort((a, b) =>
+                        a.user.first_name.localeCompare(b.user.first_name)
+                    )
+
+        }
     },
     extraReducers: (builder) => {
         builder
+            .addCase(REHYDRATE, (state: any, action: any) => {
+                if (action.payload?.auth) {
+                    state.isLoading = "idle"; // ✅ reset loading
+                }
+            })
             // create user
             .addCase(createUserThunk.pending, (state) => {
                 state.isLoading = "pending";
             })
-            .addCase(createUserThunk.fulfilled, (state) => {
+            .addCase(createUserThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
+                state.user = action.payload
             })
             .addCase(createUserThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
+
             })
 
             // phone login
@@ -108,11 +153,14 @@ const authSlice = createSlice({
             .addCase(phoneLoginThunk.rejected, (state) => {
                 state.isLoading = "failed";
             })
+
+            // verify otp
             .addCase(verifyOtpThunk.pending, (state) => {
                 state.isLoading = "pending";
             })
-            .addCase(verifyOtpThunk.fulfilled, (state) => {
+            .addCase(verifyOtpThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
+                state.user = action.payload
             })
             .addCase(verifyOtpThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
@@ -121,6 +169,7 @@ const authSlice = createSlice({
             // get current user
             .addCase(getCurrentUserThunk.pending, (state) => {
                 state.isLoading = "pending";
+                state.user = null
             })
             .addCase(getCurrentUserThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
@@ -128,6 +177,8 @@ const authSlice = createSlice({
             })
             .addCase(getCurrentUserThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
+                state.user = null
+
             })
 
             // get users with interests
@@ -136,17 +187,43 @@ const authSlice = createSlice({
             })
             .addCase(getUsersWithInterestsThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
-                // in interests, add only first two 
-                // if (state.usersWithInterests?.interest) {
-                    state.usersWithInterests = action.payload
-                    state.usersWithInterests?.interest = state.usersWithInterests?.interest.slice(0, 2);
-                // }
+                // add only first two intesersts
+                const modifiedUserIntreset = action.payload.map((data) => ({
+                    id: data.id,
+                    user: { ...data.user },
+                    interest: data.interest.slice(0, 2),
+                }))
+                state.usersWithInterests = modifiedUserIntreset.filter(u => u.user.uid !== state.user?.uid);
             })
             .addCase(getUsersWithInterestsThunk.rejected, (state, action) => {
+                state.isLoading = "failed";
+            })
+
+            // logout
+            .addCase(logoutThunk.pending, (state) => {
+                state.isLoading = "pending";
+            })
+            .addCase(logoutThunk.fulfilled, (state) => {
+                state.isLoading = "succeeded";
+                state.user = null
+            })
+            .addCase(logoutThunk.rejected, (state, action) => {
+                state.isLoading = "failed";
+            })
+
+            // get single user
+            .addCase(getSingleUserThunk.pending, (state) => {
+                state.isLoading = "pending";
+            })
+            .addCase(getSingleUserThunk.fulfilled, (state, action) => {
+                state.isLoading = "succeeded";
+                state.singleUser = action.payload
+            })
+            .addCase(getSingleUserThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
             })
     },
 });
 
-export const { resetAuthState } = authSlice.actions;
+export const { handleUserSearch } = authSlice.actions;
 export default authSlice.reducer;

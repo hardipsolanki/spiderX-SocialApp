@@ -69,6 +69,7 @@ export interface CreateUser {
     designation: string;
     location: string;
     avatar: string;
+    about: string;
 
 }
 
@@ -81,6 +82,9 @@ export interface User {
     designation: string;
     location: string;
     createdAt?: Date;
+    avatar: string;
+    about: string;
+    interests?: string[];
 }
 
 export interface UserInterest {

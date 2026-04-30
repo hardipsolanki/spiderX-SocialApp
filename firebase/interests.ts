@@ -6,7 +6,6 @@ class InterestsService {
     async getInterests() {
         try {
             const intrests = await this.interestsCollection.get()
-            console.log("intreset: ", intrests.docs)
             return intrests.docs[0].data()
         } catch (error) {
             console.error('Error getting user interests:', error);
@@ -14,7 +13,7 @@ class InterestsService {
     }
 
     async addUserInterest(userRef: FirebaseFirestoreTypes.DocumentReference, interest: string[]) {
-        try {
+        try {        
             await this.addInterestsCollection.add({
                 user: userRef,
                 interest
