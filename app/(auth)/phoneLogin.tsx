@@ -34,7 +34,6 @@ export default function PhoneLogin() {
     defaultValues: { phone: "" },
     mode: "onChange",
   });
-  console.log({ isLoading });
   const onSubmit = async (data: PhoneForm) => {
     dispatch(phoneLoginThunk(`+91${data.phone}`))
       .unwrap()

@@ -1,24 +1,24 @@
 // screens/UserProfileScreen.tsx
 import { getSingleUserThunk } from "@/features/authSlice";
-import { sendConnectionRequest } from "@/features/connectionSlice";
+import {
+  checkIsConnectionReqSended,
+  sendConnectionRequest,
+} from "@/features/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width } = Dimensions.get("window");
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface UserProfile {
@@ -32,22 +32,6 @@ interface UserProfile {
   about: string;
   avatar: string;
 }
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const USER: UserProfile = {
-  name: "Emma Wilson",
-  title: "UI/UX Designer",
-  tags: ["Technology", "Design"],
-  location: "San Francisco, CA",
-  email: "emma.wilson@example.com",
-  phone: "+1 (588) 321-0987",
-  memberSince: "May 2024",
-  about:
-    "Passionate UI/UX designer who loves creating meaningful digital experiences.",
-  avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const BackButton = ({ onPress }: { onPress: () => void }) => (
   <TouchableOpacity
@@ -82,15 +66,20 @@ const InfoRow = ({ icon, value }: { icon: React.ReactNode; value: string }) => (
 export default function UserProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const connectionLoading = useAppSelector(
-    (state) => state.connection.isLoading,
-  );
+  const { isLoading: connectionLoading, isConnectionReqSended } =
+    useAppSelector((state) => state.connection);
   const { uid } = useLocalSearchParams<{ uid: string }>();
 
   const { isLoading, singleUser, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(getSingleUserThunk(uid));
+    dispatch(
+      checkIsConnectionReqSended({
+        sendUserUid: user?.uid || "",
+        receiverUid: uid,
+      }),
+    );
   }, []);
 
   if (isLoading === "pending") {
@@ -180,14 +169,20 @@ export default function UserProfileScreen() {
 
       {/* CTA Button */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          disabled={connectionLoading === "pending"}
-          style={styles.inviteBtn}
-          activeOpacity={0.85}
-          onPress={() => handleSendToConnection(singleUser?.uid || "")}
-        >
-          <Text style={styles.inviteBtnText}>Send Invitation</Text>
-        </TouchableOpacity>
+        {isConnectionReqSended ? (
+          <View style={styles.inviteBtn}>
+            <Text style={styles.inviteBtnText}>Request Sent</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            disabled={connectionLoading === "pending"}
+            style={styles.inviteBtn}
+            activeOpacity={0.85}
+            onPress={() => handleSendToConnection(singleUser?.uid || "")}
+          >
+            <Text style={styles.inviteBtnText}>Send Connection Request</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );

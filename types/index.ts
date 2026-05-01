@@ -88,8 +88,11 @@ export interface User {
 }
 
 export interface UserInterest {
-  id: string;
-  name: string;
-  icon?: string;
-  selected: boolean;
+    id: string;
+    name: string;
+    icon?: string;
+    selected: boolean;
 }
+
+
+export type Tab = "received" | "sent";

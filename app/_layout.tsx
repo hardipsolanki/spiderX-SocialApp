@@ -20,7 +20,7 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
-            name="(root)/userProfile"
+            name="(root)/userProfile/[uid]"
             options={{ headerShown: false }}
           />
           <Stack.Screen

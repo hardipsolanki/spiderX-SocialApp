@@ -30,7 +30,7 @@ export const createUserThunk = createAsyncThunk(
     async (data: CreateUser, { rejectWithValue }) => {
         try {
             const res = await authServices.createProfile(data);
-            return res 
+            return res
         } catch (error: any) {
             return rejectWithValue(error.message || "Something went wrong");
         }
@@ -188,12 +188,12 @@ const authSlice = createSlice({
             .addCase(getUsersWithInterestsThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
                 // add only first two intesersts
-                const modifiedUserIntreset = action.payload.map((data) => ({
+
+                state.usersWithInterests = action.payload.map((data) => ({
                     id: data.id,
                     user: { ...data.user },
                     interest: data.interest.slice(0, 2),
-                }))
-                state.usersWithInterests = modifiedUserIntreset.filter(u => u.user.uid !== state.user?.uid);
+                })).filter(u => u.user.uid !== state.user?.uid);
             })
             .addCase(getUsersWithInterestsThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
@@ -206,6 +206,8 @@ const authSlice = createSlice({
             .addCase(logoutThunk.fulfilled, (state) => {
                 state.isLoading = "succeeded";
                 state.user = null
+                state.usersWithInterests = []
+                state.serachableUser = []
             })
             .addCase(logoutThunk.rejected, (state, action) => {
                 state.isLoading = "failed";

@@ -12,7 +12,7 @@ export default function Home() {
   const { usersWithInterests } = useAppSelector((state) => state.auth);
   useEffect(() => {
     dispatch(getUsersWithInterestsThunk());
-  }, []);
+  }, [dispatch]);
 
   return (
     <SafeAreaView style={styles.container}>

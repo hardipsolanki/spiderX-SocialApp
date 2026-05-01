@@ -90,6 +90,7 @@ export const TEXTS = {
     DECLINE: "Decline",
     ACCEPT: "Accept",
     EMPTY: "No invitations yet",
+    DECLINED: "Invitation declined",
   },
   NAV: {
     HOME: "Home",

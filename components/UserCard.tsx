@@ -1,7 +1,15 @@
 import { COLORS } from "@/constants/colors";
+import {
+  checkIsConnectionReqSended,
+  getSentConnectionRequests,
+  sendConnectionRequest,
+} from "@/features/connectionSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { useEffect } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 interface Props {
   name: string;
@@ -12,12 +20,50 @@ interface Props {
 }
 
 export default function UserCard({ name, role, tags, image, uid }: Props) {
+  const dispatch = useAppDispatch();
+  const { isLoading: connectionLoading, isConnectionReqSended } =
+    useAppSelector((state) => state.connection);
+  const user = useAppSelector((state) => state.auth.user);
+
+  const handleSendToConnection = () => {
+    dispatch(
+      sendConnectionRequest({
+        sendUserUid: user?.uid || "",
+        receiverUid: uid,
+      }),
+    )
+      .unwrap()
+      .then(() => {
+        dispatch(getSentConnectionRequests(user?.uid || ""));
+        dispatch(
+          checkIsConnectionReqSended({
+            sendUserUid: user?.uid || "",
+            receiverUid: uid,
+          }),
+        );
+        Toast.show({
+          type: "success",
+          text1: "Success!",
+          text2: "Connection request sent successfully",
+        });
+      });
+  };
+
+  useEffect(() => {
+    dispatch(
+      checkIsConnectionReqSended({
+        sendUserUid: user?.uid || "",
+        receiverUid: uid,
+      }),
+    );
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* LEFT SIDE (Clickable area) */}
       <Link
         href={{
-          pathname: "/userProfile",
+          pathname: "/(root)/userProfile/[uid]",
           params: { uid },
         }}
         asChild
@@ -34,9 +80,19 @@ export default function UserCard({ name, role, tags, image, uid }: Props) {
       </Link>
 
       {/* RIGHT SIDE BUTTON */}
-      <TouchableOpacity style={styles.button}>
-        <Ionicons name="person-add-outline" size={16} color={COLORS.primary} />
-      </TouchableOpacity>
+      {!isConnectionReqSended && (
+        <TouchableOpacity
+          disabled={connectionLoading === "pending"}
+          onPress={handleSendToConnection}
+          style={styles.button}
+        >
+          <Ionicons
+            name="person-add-outline"
+            size={16}
+            color={COLORS.primary}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

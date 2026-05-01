@@ -1,29 +1,99 @@
 import firestore from '@react-native-firebase/firestore';
+import { authServices } from './auth';
 
 class ConnectionService {
-    private interestsCollection = firestore().collection('connection-request');
+    private connectionRequest = firestore().collection('connection-request');
     private usersCollection = firestore().collection('users');
 
     async sendConnectionRequest(senderUid: string, receiverUid: string) {
         try {
-            const senderUser = await this.usersCollection.doc(senderUid).get()
-            const receiverUser = await this.usersCollection.doc(receiverUid).get()
-            await this.interestsCollection.add({
-                send_by: senderUser.ref,
-                received_by: receiverUser.ref
+            const senderUser = await authServices.getUserRef(senderUid)
+            const receiverUser = await authServices.getUserRef(receiverUid)
+
+            await this.connectionRequest.add({
+                send_by: senderUser,
+                received_by: receiverUser
             })
         } catch (error) {
             console.error('Error sending connection request:', error);
             throw error
         }
     }
-    async getConnectionRequests(receiverUid: string) {
+    async getReceivedConnectionRequests(receiverUid: string) {
+        const receiverRef = await authServices.getUserRef(receiverUid)
+        const snapshot = await this.connectionRequest
+            .where('received_by', '==', receiverRef)
+            .get();
+
+        if (snapshot.empty) return [];
+
+        const requests = await Promise.all(
+            snapshot.docs.map(async (doc) => {
+                const data = doc.data();
+
+                const sendBySnap = await data.send_by.get();
+                const receivedBySnap = await data.received_by.get();
+
+                return {
+                    requestId: doc.id,
+                    sendBy: { uid: sendBySnap.id, ...sendBySnap.data() },
+                    receivedBy: { uid: receivedBySnap.id, ...receivedBySnap.data() },
+                };
+            })
+        );
+        const sendConnections = requests.map((request) => {
+            if (request.receivedBy.uid === receiverUid) return {...request.sendBy, requestId: request.requestId}
+        });
+        return sendConnections;
+    }
+
+    async getSendConnectionRequests(senderUid: string) {
+        const senderRef = await authServices.getUserRef(senderUid)
+        const snapshot = await this.connectionRequest
+            .where('send_by', '==', senderRef)
+            .get();
+
+        if (snapshot.empty) return [];
+
+        const requests = await Promise.all(
+            snapshot.docs.map(async (doc) => {
+                const data = doc.data();
+
+                const sendBySnap = await data.send_by.get();
+                const receivedBySnap = await data.received_by.get();
+
+                return {
+                    requestId: doc.id,
+                    sendBy: { uid: sendBySnap.id, ...sendBySnap.data() },
+                    receivedBy: { uid: receivedBySnap.id, ...receivedBySnap.data() },
+                };
+            })
+        );
+        const sendConnections = requests.map((request) => {
+            if (request.sendBy.uid === senderUid) return {...request.receivedBy, requestId: request.requestId}
+        });
+        return sendConnections;
+    }
+
+    async rejectAndRenoveConnectionRequest(requestId: string) {
         try {
-            const snapshot = await this.interestsCollection.where('received_by', '==', this.usersCollection.doc(receiverUid)).get()
-            console.log({data: snapshot.docs})
-            return snapshot.docs.map(doc => doc.data())
+            await this.connectionRequest.doc(requestId).delete();
         } catch (error) {
-            console.error('Error getting connection requests:', error);
+            console.error('Error rejecting connection request:', error);
+            throw error
+        }
+    }
+    async checkIsConnectionReqSended(senderUid: string, receiverUid: string) {
+        try {
+            const senderRef = await authServices.getUserRef(senderUid)
+            const receiverRef = await authServices.getUserRef(receiverUid)
+            const snapshot = await this.connectionRequest
+                .where('send_by', '==', senderRef)
+                .where('received_by', '==', receiverRef)
+                .get();
+            return snapshot.empty ? false : true
+        } catch (error) {
+            console.error('Error checking is connection request sent:', error);
             throw error
         }
     }

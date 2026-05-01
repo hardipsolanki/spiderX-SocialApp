@@ -56,9 +56,7 @@ export default function InterestsScreen() {
       return;
     }
     try {
-      console.log("user: ", user);
       const userRef = await authServices.getUserRef(user?.uid as string);
-      console.log("userRef: ", userRef);
       if (userRef) {
         dispatch(addUserInterest({ userRef, interest: selectedInterests }))
           .unwrap()

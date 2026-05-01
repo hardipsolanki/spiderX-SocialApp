@@ -30,7 +30,6 @@ class Authentication {
                 const userDoc = snapshot.docs[0];
                 if (userDoc?.exists()) {
                     const userWithThieInterests = await this.addInterestsCollection.where('user', '==', userDoc.ref).get()
-                    console.log("user intersets: ", userWithThieInterests)
                     return{
                         ...userDoc.data(),
                         interests: userWithThieInterests.docs[0]?.data().interest ? userWithThieInterests.docs[0]?.data().interest : []
