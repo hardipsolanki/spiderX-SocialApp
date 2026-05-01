@@ -15,6 +15,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,8 +29,6 @@ export default function SignUp() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   const isLoading = useAppSelector((state) => state.auth.isLoading);
-
-  // ✅ Get phone from redux (after OTP verify)
   const phoneNumber = useAppSelector((state) => state.auth.user?.phone_number);
 
   const {
@@ -43,6 +42,7 @@ export default function SignUp() {
       email: "",
       designation: "",
       location: "",
+      about: "", // ✅ NEW FIELD
     },
   });
 
@@ -54,7 +54,6 @@ export default function SignUp() {
       Toast.show({
         type: "error",
         text1: "Permission Denied",
-        text2: "Gallery access is required",
       });
       return;
     }
@@ -75,18 +74,12 @@ export default function SignUp() {
 
   const onSubmit = async (data: CreateUser) => {
     if (!avatarUri) {
-      Toast.show({
-        type: "error",
-        text1: "Avatar required",
-      });
+      Toast.show({ type: "error", text1: "Avatar required" });
       return;
     }
 
     if (!phoneNumber) {
-      Toast.show({
-        type: "error",
-        text1: "Phone missing",
-      });
+      Toast.show({ type: "error", text1: "Phone missing" });
       return;
     }
 
@@ -98,20 +91,16 @@ export default function SignUp() {
       }),
     )
       .unwrap()
-      .then((data) => {
-        if (data) {
-          dispatch(getCurrentUserThunk())
-            .unwrap()
-            .then((data) => {
-              if (data) {
-                Toast.show({
-                  type: "success",
-                  text1: "Profile created",
-                });
-                router.replace("/interests");
-              }
+      .then(() => {
+        dispatch(getCurrentUserThunk())
+          .unwrap()
+          .then(() => {
+            Toast.show({
+              type: "success",
+              text1: "Profile created",
             });
-        }
+            router.replace("/interests");
+          });
       })
       .catch((err) => {
         Toast.show({
@@ -127,7 +116,10 @@ export default function SignUp() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* HEADER */}
           <Text style={styles.title}>Create Profile</Text>
 
@@ -146,11 +138,10 @@ export default function SignUp() {
 
           {/* FORM */}
           <View style={styles.card}>
-            {/* First Name */}
             <Controller
               control={control}
               name="first_name"
-              rules={{ required: "Required" }}
+              rules={{ required: "First name is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="First Name"
@@ -162,11 +153,10 @@ export default function SignUp() {
               )}
             />
 
-            {/* Last Name */}
             <Controller
               control={control}
               name="last_name"
-              rules={{ required: "Required" }}
+              rules={{ required: "Last name is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Last Name"
@@ -178,7 +168,7 @@ export default function SignUp() {
               )}
             />
 
-            {/* ✅ PHONE (DISABLED) */}
+            {/* PHONE (disabled) */}
             <CustomInput
               label="Phone Number"
               value={phoneNumber || ""}
@@ -187,11 +177,10 @@ export default function SignUp() {
               onChangeText={() => {}}
             />
 
-            {/* Email */}
             <Controller
               control={control}
               name="email"
-              rules={{ required: "Required" }}
+              rules={{ required: "Email is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Email"
@@ -203,31 +192,62 @@ export default function SignUp() {
               )}
             />
 
-            {/* Designation */}
             <Controller
               control={control}
               name="designation"
+              rules={{ required: "Designation is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Designation"
                   value={value}
                   onChangeText={onChange}
+                  error={errors.designation?.message}
                   placeholder="Developer"
                 />
               )}
             />
 
-            {/* Location */}
             <Controller
               control={control}
               name="location"
+              rules={{ required: "Location is required" }}
               render={({ field: { onChange, value } }) => (
                 <CustomInput
                   label="Location"
                   value={value}
                   onChangeText={onChange}
+                  error={errors.location?.message}
                   placeholder="India"
                 />
+              )}
+            />
+
+            {/* ✅ ABOUT (MULTILINE) */}
+            <Controller
+              control={control}
+              name="about"
+              rules={{
+                required: "About is required",
+                minLength: {
+                  value: 10,
+                  message: "Minimum 10 characters",
+                },
+              }}
+              render={({ field: { onChange, value } }) => (
+                <View style={styles.aboutContainer}>
+                  <Text style={styles.label}>About</Text>
+                  <TextInput
+                    style={styles.aboutInput}
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Tell us about yourself..."
+                    multiline
+                    numberOfLines={4}
+                  />
+                  {errors.about && (
+                    <Text style={styles.error}>{errors.about.message}</Text>
+                  )}
+                </View>
               )}
             />
           </View>
@@ -247,17 +267,24 @@ export default function SignUp() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FB" },
   scroll: { padding: 20 },
-  title: { fontSize: 26, fontWeight: "700", marginBottom: 20 },
+
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    marginBottom: 20,
+  },
 
   avatarContainer: {
     alignItems: "center",
     marginBottom: 20,
   },
+
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
   },
+
   avatarPlaceholder: {
     width: 100,
     height: 100,
@@ -272,5 +299,29 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
+  },
+
+  aboutContainer: {
+    marginTop: 12,
+  },
+
+  label: {
+    fontSize: 12,
+    marginBottom: 4,
+    color: "#444",
+  },
+
+  aboutInput: {
+    backgroundColor: "#F1F1F1",
+    borderRadius: 10,
+    padding: 10,
+    textAlignVertical: "top",
+    minHeight: 80,
+  },
+
+  error: {
+    color: "red",
+    fontSize: 11,
+    marginTop: 4,
   },
 });

@@ -61,11 +61,6 @@ export default function InterestsScreen() {
         dispatch(addUserInterest({ userRef, interest: selectedInterests }))
           .unwrap()
           .then(() => {
-            Toast.show({
-              type: "success",
-              text1: "Success!",
-              text2: TEXTS.INTERESTS.SUCCESS,
-            });
             router.replace("/allCompleted");
           });
       }

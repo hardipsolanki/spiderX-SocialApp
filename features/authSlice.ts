@@ -10,6 +10,7 @@ export interface UsersWithInterests {
     id: string;
     interest: string[];
     user: User;
+    connectionReq: "pending" | "accepted" | "rejected";
 }
 interface AuthState {
     user: User | null;
@@ -191,6 +192,7 @@ const authSlice = createSlice({
 
                 state.usersWithInterests = action.payload.map((data) => ({
                     id: data.id,
+                    connectionReq: data.connectionReq,
                     user: { ...data.user },
                     interest: data.interest.slice(0, 2),
                 })).filter(u => u.user.uid !== state.user?.uid);

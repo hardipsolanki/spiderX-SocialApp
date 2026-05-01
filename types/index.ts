@@ -84,7 +84,8 @@ export interface User {
     createdAt?: Date;
     avatar: string;
     about: string;
-    interests?: string[];
+    connectionReq?: "pending"  | "rejected";
+    interest?: string[];
 }
 
 export interface UserInterest {

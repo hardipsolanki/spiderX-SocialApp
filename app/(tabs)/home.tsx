@@ -21,10 +21,11 @@ export default function Home() {
         renderItem={({ item }) => (
           <UserCard
             uid={item.user.uid}
-            name={item.user.first_name}
+            name={item.user.first_name + " " + item.user.last_name}
             image={item.user.avatar}
             role={item.user.designation}
             tags={item.interest.join(", ")}
+            connectionReq={item.connectionReq}
           />
         )}
         keyExtractor={(item) => item.id}

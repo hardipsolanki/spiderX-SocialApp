@@ -1,13 +1,12 @@
 import { COLORS } from "@/constants/colors";
+import { getUsersWithInterestsThunk } from "@/features/authSlice";
 import {
-  checkIsConnectionReqSended,
   getSentConnectionRequests,
   sendConnectionRequest,
 } from "@/features/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useEffect } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -17,14 +16,22 @@ interface Props {
   tags: string;
   image: string;
   uid: string;
+  connectionReq: "pending" | "accepted" | "rejected";
 }
 
-export default function UserCard({ name, role, tags, image, uid }: Props) {
+export default function UserCard({
+  name,
+  role,
+  tags,
+  image,
+  uid,
+  connectionReq,
+}: Props) {
   const dispatch = useAppDispatch();
-  const { isLoading: connectionLoading, isConnectionReqSended } =
-    useAppSelector((state) => state.connection);
+  const { isLoading: connectionLoading } = useAppSelector(
+    (state) => state.connection,
+  );
   const user = useAppSelector((state) => state.auth.user);
-
   const handleSendToConnection = () => {
     dispatch(
       sendConnectionRequest({
@@ -34,29 +41,18 @@ export default function UserCard({ name, role, tags, image, uid }: Props) {
     )
       .unwrap()
       .then(() => {
-        dispatch(getSentConnectionRequests(user?.uid || ""));
-        dispatch(
-          checkIsConnectionReqSended({
-            sendUserUid: user?.uid || "",
-            receiverUid: uid,
-          }),
-        );
-        Toast.show({
-          type: "success",
-          text1: "Success!",
-          text2: "Connection request sent successfully",
-        });
+        dispatch(getSentConnectionRequests(user?.uid || ""))
+          .unwrap()
+          .then(() => {
+            Toast.show({
+              type: "success",
+              text1: "Success!",
+              text2: "Connection request sent successfully",
+            });
+            dispatch(getUsersWithInterestsThunk());
+          });
       });
   };
-
-  useEffect(() => {
-    dispatch(
-      checkIsConnectionReqSended({
-        sendUserUid: user?.uid || "",
-        receiverUid: uid,
-      }),
-    );
-  }, []);
 
   return (
     <View style={styles.container}>
@@ -80,7 +76,8 @@ export default function UserCard({ name, role, tags, image, uid }: Props) {
       </Link>
 
       {/* RIGHT SIDE BUTTON */}
-      {!isConnectionReqSended && (
+      {/* TODO when you remove connection just  assign connectionRq = undfined */}
+      {connectionReq !== "pending" && (
         <TouchableOpacity
           disabled={connectionLoading === "pending"}
           onPress={handleSendToConnection}

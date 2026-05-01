@@ -91,6 +91,7 @@ export const TEXTS = {
     ACCEPT: "Accept",
     EMPTY: "No invitations yet",
     DECLINED: "Invitation declined",
+    ACCEPTED: "Invitation accepted",
   },
   NAV: {
     HOME: "Home",
@@ -98,6 +99,11 @@ export const TEXTS = {
     CHATS: "Chats",
     PROFILE: "Profile",
   },
+  CHAT: {
+    CHAT: "Chats",
+    SEARCH: "Search chats",
+    EMPTY: "No conversations"
+  }
 
 
 };

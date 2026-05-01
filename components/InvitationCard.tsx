@@ -1,6 +1,11 @@
 import { TEXTS } from "@/constants/texts";
-import { rejectAndRemoveConnectionRequest } from "@/features/connectionSlice";
-import { useAppDispatch } from "@/store/hooks";
+import { getUsersWithInterestsThunk } from "@/features/authSlice";
+import {
+  acceptConnectionRequest,
+  fetchConnections,
+  rejectAndRemoveConnectionRequest,
+} from "@/features/connectionSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { User } from "@/types";
 import { Link } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -14,9 +19,15 @@ const InvitationCard = ({
   isSend: boolean;
 }) => {
   const dispatch = useAppDispatch();
-
+  const { isLoading } = useAppSelector((state) => state.connection);
+  const user = useAppSelector((state) => state.auth.user);
   const handleDeclineReq = () => {
-    dispatch(rejectAndRemoveConnectionRequest(item.requestId))
+    dispatch(
+      rejectAndRemoveConnectionRequest({
+        requestId: item.requestId,
+        rejectedUserUid: item?.uid || "",
+      }),
+    )
       .unwrap()
       .then(() => {
         Toast.show({
@@ -24,9 +35,32 @@ const InvitationCard = ({
           text1: "Success!",
           text2: TEXTS.INVITATIONS.DECLINED,
         });
+        dispatch(getUsersWithInterestsThunk());
       })
       .catch((error) => {
         console.log("error while decline request: ", error);
+      });
+  };
+
+  const handleAceptReq = () => {
+    dispatch(
+      acceptConnectionRequest({
+        requestId: item.requestId,
+        senderUid: item.uid,
+        receiverUid: user?.uid || "",
+      }),
+    )
+      .unwrap()
+      .then(() => {
+        dispatch(fetchConnections(user?.uid || ""));
+        Toast.show({
+          type: "success",
+          text1: "Success!",
+          text2: TEXTS.INVITATIONS.ACCEPTED,
+        });
+      })
+      .catch((error) => {
+        console.log("error while accept request: ", error);
       });
   };
 
@@ -59,6 +93,7 @@ const InvitationCard = ({
       {/* Actions */}
       <View style={styles.cardActions}>
         <TouchableOpacity
+          disabled={isLoading === "pending"}
           style={styles.declineBtn}
           activeOpacity={0.75}
           onPress={handleDeclineReq}
@@ -68,9 +103,10 @@ const InvitationCard = ({
 
         {!isSend && (
           <TouchableOpacity
+            disabled={isLoading === "pending"}
             style={styles.acceptBtn}
             activeOpacity={0.8}
-            onPress={() => {}}
+            onPress={handleAceptReq}
           >
             <Text style={styles.acceptText}>{TEXTS.INVITATIONS.ACCEPT}</Text>
           </TouchableOpacity>

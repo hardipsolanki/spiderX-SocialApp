@@ -100,9 +100,10 @@ class Authentication {
                 if (!snapshot.empty) {
                     const userInterests = await this.addInterestsCollection.where('user', '==', snapshot.docs[0].ref).get()
                     if (!userInterests.empty) {
+                        console.log({userInterests})
                         return {
                             ...snapshot.docs[0].data(),
-                            interests: userInterests.docs[0].data().interest
+                            interest: userInterests.docs[0].data().interest
                         }
                     }
                     return snapshot.docs[0].data();
@@ -139,6 +140,7 @@ class Authentication {
                             id: doc.id,
                             interest: data.interest,
                             user: userSnap.data(),
+                            connectionReq: data.connectionReq
                         };
                     }
                 })
@@ -166,10 +168,9 @@ class Authentication {
                 .get();
             if (!snapshot.empty) {
                 const userIntrests = await this.addInterestsCollection.where('user', '==', snapshot.docs[0].ref).get()
-
                 return {
                     ...snapshot.docs[0].data(),
-                    interests: userIntrests.docs[0].data().interest
+                    interest: userIntrests.docs[0].data().interest
                 }
             }
         } catch (error) {

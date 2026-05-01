@@ -1,9 +1,6 @@
 // screens/UserProfileScreen.tsx
 import { getSingleUserThunk } from "@/features/authSlice";
-import {
-  checkIsConnectionReqSended,
-  sendConnectionRequest,
-} from "@/features/connectionSlice";
+import { sendConnectionRequest } from "@/features/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -66,20 +63,15 @@ const InfoRow = ({ icon, value }: { icon: React.ReactNode; value: string }) => (
 export default function UserProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading: connectionLoading, isConnectionReqSended } =
-    useAppSelector((state) => state.connection);
+  const { isLoading: connectionLoading } = useAppSelector(
+    (state) => state.connection,
+  );
   const { uid } = useLocalSearchParams<{ uid: string }>();
 
   const { isLoading, singleUser, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(getSingleUserThunk(uid));
-    dispatch(
-      checkIsConnectionReqSended({
-        sendUserUid: user?.uid || "",
-        receiverUid: uid,
-      }),
-    );
   }, []);
 
   if (isLoading === "pending") {
@@ -130,7 +122,7 @@ export default function UserProfileScreen() {
 
           {/* Tags */}
           <View style={styles.tagsRow}>
-            {singleUser?.interests?.map((t) => (
+            {singleUser?.interest?.map((t) => (
               <TagPill key={t} label={t} />
             ))}
           </View>
@@ -169,7 +161,7 @@ export default function UserProfileScreen() {
 
       {/* CTA Button */}
       <View style={styles.footer}>
-        {isConnectionReqSended ? (
+        {singleUser?.connectionReq === "pending" ? (
           <View style={styles.inviteBtn}>
             <Text style={styles.inviteBtnText}>Request Sent</Text>
           </View>

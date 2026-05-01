@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
         router.replace("/(auth)/phoneLogin");
       } else if (user && !user?.avatar) {
         router.replace("/(auth)/createProfile");
-      } else if (user.avatar && !user.interests?.length) {
+      } else if (user.avatar && !user.interest?.length) {
         router.replace("/(root)/interests");
       } else {
         router.replace("/(tabs)/home");

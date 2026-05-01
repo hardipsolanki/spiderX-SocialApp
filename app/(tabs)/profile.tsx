@@ -64,7 +64,7 @@ export default function ViewProfile() {
         {/* ABOUT */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.about}>{"No information added"}</Text>
+          <Text style={styles.about}>{user?.about}</Text>
         </View>
 
         {/* LOGOUT */}

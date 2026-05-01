@@ -1,3 +1,4 @@
+import { connectedUserServices } from "@/firebase/connectedUsers";
 import { connectionService } from "@/firebase/connection";
 import { User } from "@/types";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
@@ -6,17 +7,18 @@ interface ConnectionRequest extends User {
     requestId: string
 }
 
-interface AuthState {
+interface ConnectionState {
     isLoading: "idle" | "pending" | "succeeded" | "failed";
     sendConnectionRequest: ConnectionRequest[] | null
     receivedConnectionRequest: ConnectionRequest[] | null
-    isConnectionReqSended?: boolean
+    connections: ConnectionRequest[] | null;
 }
 
-const initialState: AuthState = {
+const initialState: ConnectionState = {
     isLoading: "idle",
     sendConnectionRequest: null,
-    receivedConnectionRequest: null
+    receivedConnectionRequest: null,
+    connections: null,
 };
 
 export const sendConnectionRequest = createAsyncThunk(
@@ -56,9 +58,9 @@ export const getSentConnectionRequests = createAsyncThunk(
 
 export const rejectAndRemoveConnectionRequest = createAsyncThunk(
     "connection/rejectAndRemoveConnectionRequest",
-    async (requestId: string, { rejectWithValue }) => {
+    async ({requestId,rejectedUserUid}: {requestId: string, rejectedUserUid: string}, { rejectWithValue }) => {
         try {
-            await connectionService.rejectAndRenoveConnectionRequest(requestId)
+            await connectionService.rejectAndRenoveConnectionRequest(requestId, rejectedUserUid)
             return requestId as string
         } catch (error: any) {
             return rejectWithValue(error.message || "failed to reject and remove connection request");
@@ -66,18 +68,37 @@ export const rejectAndRemoveConnectionRequest = createAsyncThunk(
     },
 )
 
-export const checkIsConnectionReqSended = createAsyncThunk(
-    "connection/checkIsConnectionReqSended",
-    async ({ sendUserUid, receiverUid }: { sendUserUid: string, receiverUid: string },
-         { rejectWithValue }) => {
+
+export const acceptConnectionRequest = createAsyncThunk(
+    'connection/acceptRequest',
+    async (
+        {
+            requestId,
+            senderUid,
+            receiverUid,
+        }: { requestId: string; senderUid: string; receiverUid: string },
+        { rejectWithValue }
+    ) => {
         try {
-            const res = await connectionService.checkIsConnectionReqSended(sendUserUid, receiverUid)
-            return res
+            await connectedUserServices.acceptConnectionRequest(requestId, senderUid, receiverUid);
+            return { requestId, senderUid };
         } catch (error: any) {
-            return rejectWithValue(error.message || "failed to check is connection request sended");
+            return rejectWithValue(error.message || 'Accept failed');
         }
     }
-)
+);
+
+export const fetchConnections = createAsyncThunk(
+    'connection/fetchConnections',
+    async (uid: string, { rejectWithValue }) => {
+        try {
+            const connections = await connectedUserServices.getConnections(uid);
+            return connections;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch connections');
+        }
+    }
+);
 
 const connectionSlice = createSlice({
     name: "connection",
@@ -134,23 +155,43 @@ const connectionSlice = createSlice({
                         state.receivedConnectionRequest?.splice(index, 1)
                     }
                 }
-            
             })
             .addCase(rejectAndRemoveConnectionRequest.rejected, (state) => {
                 state.isLoading = "failed";
             })
 
-            // check is connection request sended
-            .addCase(checkIsConnectionReqSended.pending, (state) => {
+            // accespt request
+            .addCase(acceptConnectionRequest.pending, (state) => {
                 state.isLoading = "pending";
             })
-            .addCase(checkIsConnectionReqSended.fulfilled, (state, action) => {
+            .addCase(acceptConnectionRequest.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
-                state.isConnectionReqSended = action.payload
+                if (state.receivedConnectionRequest) {
+                    state.receivedConnectionRequest = state.receivedConnectionRequest?.filter(
+                        (req) => req.requestId !== action.payload.requestId
+                    );
+                }
+                if (state.sendConnectionRequest) {
+                    state.sendConnectionRequest = state.sendConnectionRequest?.filter(
+                        (req) => req.requestId !== action.payload.requestId
+                    );
+                }
             })
-            .addCase(checkIsConnectionReqSended.rejected, (state) => {
+            .addCase(acceptConnectionRequest.rejected, (state) => {
                 state.isLoading = "failed";
             })
+
+            // fetch connections
+            .addCase(fetchConnections.pending, (state) => {
+                state.isLoading = "pending";
+            })
+            .addCase(fetchConnections.fulfilled, (state, action) => {
+                state.isLoading = "succeeded";
+                state.connections = action.payload as ConnectionRequest[];
+            })
+            .addCase(fetchConnections.rejected, (state) => {
+                state.isLoading = "failed";
+            });
     },
 });
 
