@@ -24,6 +24,10 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="(root)/chat/[uid]"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="(root)/invitationSucess"
             options={{ headerShown: false }}
           />

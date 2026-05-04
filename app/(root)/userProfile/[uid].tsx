@@ -1,6 +1,13 @@
 // screens/UserProfileScreen.tsx
-import { getSingleUserThunk } from "@/features/authSlice";
-import { sendConnectionRequest } from "@/features/connectionSlice";
+import {
+  getConnectedUserThunk,
+  getSingleUserThunk,
+} from "@/features/auth/authSlice";
+import { openOrCreateChat } from "@/features/chat/chatSlice";
+import {
+  acceptRequest,
+  sendConnection,
+} from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -82,21 +89,45 @@ export default function UserProfileScreen() {
     );
   }
 
-  const handleSendToConnection = (sendConnection: string) => {
+  const handleSendToConnection = (sendConnectionuid: string) => {
     dispatch(
-      sendConnectionRequest({
+      sendConnection({
         sendUserUid: user?.uid || "",
-        receiverUid: sendConnection,
+        receiverUid: sendConnectionuid,
       }),
-    ).then(() => {
-      router.push({
-        pathname: "/(root)/invitationSucess",
-        params: {
-          fullName: singleUser?.first_name + " " + singleUser?.last_name,
-        },
-      });
-    });
+    );
   };
+  const handleAceptReq = () => {
+    dispatch(
+      acceptRequest({
+        senderUid: singleUser?.uid || "",
+        receiverUid: user?.uid || "",
+      }),
+    );
+    dispatch(getConnectedUserThunk(user?.uid || ""));
+  };
+
+  // Connected user ના profile પર "Message" button
+  const handleOpenChat = () => {
+    dispatch(
+      openOrCreateChat({
+        currentUid: user?.uid || "",
+        otherUid: singleUser?.uid || "",
+      }),
+    );
+  };
+
+  // Chat open થાય ત્યારે navigate કરો
+  const currentChatId = useAppSelector((state) => state.chat.currentChatId);
+
+  useEffect(() => {
+    if (currentChatId) {
+      router.push({
+        pathname: "/(root)/chat/[uid]",
+        params: { uid: singleUser?.uid },
+      });
+    }
+  }, [currentChatId]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -161,11 +192,8 @@ export default function UserProfileScreen() {
 
       {/* CTA Button */}
       <View style={styles.footer}>
-        {singleUser?.connectionReq === "pending" ? (
-          <View style={styles.inviteBtn}>
-            <Text style={styles.inviteBtnText}>Request Sent</Text>
-          </View>
-        ) : (
+        {singleUser?.connectionReqStatus === null ||
+        singleUser?.connectionReqStatus === "rejected" ? (
           <TouchableOpacity
             disabled={connectionLoading === "pending"}
             style={styles.inviteBtn}
@@ -174,6 +202,35 @@ export default function UserProfileScreen() {
           >
             <Text style={styles.inviteBtnText}>Send Connection Request</Text>
           </TouchableOpacity>
+        ) : singleUser?.connectionReqStatus === "requested" ? (
+          <TouchableOpacity
+            disabled={connectionLoading === "pending"}
+            style={styles.inviteBtn}
+            activeOpacity={0.85}
+            onPress={handleAceptReq}
+          >
+            <Text style={styles.inviteBtnText}>Accept</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            {singleUser?.connectionReqStatus === "pending" ? (
+              <View style={styles.inviteBtn}>
+                <Text style={styles.inviteBtnText}>Pending</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.inviteBtn}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(root)/chat/[uid]",
+                    params: { uid: singleUser?.uid },
+                  })
+                }
+              >
+                <Text style={styles.inviteBtnText}>Message</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
     </SafeAreaView>

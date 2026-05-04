@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
   name: string;
@@ -15,28 +16,39 @@ export default function ChatItem({
   avatar,
   unread,
 }: Props) {
+  const router = useRouter();
   return (
     <View style={styles.container}>
-      <Image source={{ uri: avatar }} style={styles.avatar} />
+      <TouchableOpacity
+        onPress={() => {
+          router.push({
+            pathname: "/(root)/chat/[uid]",
+            params: { uid: "123" }, // TODO replace with actual uid
+          });
+        }}
+        style={styles.link}
+      >
+        <Image source={{ uri: avatar }} style={styles.avatar} />
 
-      <View style={styles.content}>
-        <View style={styles.row}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.time}>{time || ""}</Text>
+        <View style={styles.content}>
+          <View style={styles.row}>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.time}>{time || ""}</Text>
+          </View>
+
+          <View style={styles.row}>
+            <Text numberOfLines={1} style={styles.message}>
+              {message || "Start conversation..."}
+            </Text>
+
+            {unread ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unread}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-
-        <View style={styles.row}>
-          <Text numberOfLines={1} style={styles.message}>
-            {message || "Start conversation..."}
-          </Text>
-
-          {unread ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unread}</Text>
-            </View>
-          ) : null}
-        </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -45,10 +57,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    paddingVertical: 12,
     alignItems: "center",
   },
 
+  link: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   avatar: {
     width: 50,
     height: 50,

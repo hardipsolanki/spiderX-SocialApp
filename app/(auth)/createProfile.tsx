@@ -1,6 +1,9 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
-import { createUserThunk, getCurrentUserThunk } from "@/features/authSlice";
+import {
+    createUserThunk,
+    getCurrentUserThunk,
+} from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { CreateUser } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,15 +12,15 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

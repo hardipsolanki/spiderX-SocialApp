@@ -84,7 +84,7 @@ export interface User {
     createdAt?: Date;
     avatar: string;
     about: string;
-    connectionReq?: "pending"  | "rejected";
+    connectionReqStatus?: "pending" | "rejected" | "accepted" | "requested" | null;
     interest?: string[];
 }
 
@@ -95,5 +95,25 @@ export interface UserInterest {
     selected: boolean;
 }
 
+export interface Connection extends User {
+    requestId: string;
+}
+
 
 export type Tab = "received" | "sent";
+
+
+export interface Message {
+    id: string;
+    text: string;
+    sentBy: User;
+    createdAt: Date;
+    isRead: boolean;
+}
+
+export interface Chat {
+    chatId: string;
+    otherUser: User;
+    lastMessage: string | null;
+    lastMessageTime: Date | null;
+}

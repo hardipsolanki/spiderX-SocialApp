@@ -1,4 +1,4 @@
-import { getCurrentUserThunk } from "@/features/authSlice";
+import { getCurrentUserThunk } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,7 +24,7 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     dispatch(getCurrentUserThunk());
-
+    console.log({ user });
     const interval = setInterval(() => {
       if (!user) {
         router.replace("/(auth)/phoneLogin");

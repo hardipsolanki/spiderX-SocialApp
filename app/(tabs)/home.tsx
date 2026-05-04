@@ -1,36 +1,57 @@
+import ChatItem from "@/components/ChatItem";
 import Header from "@/components/home/Header";
-import UserCard from "@/components/UserCard";
 import { COLORS } from "@/constants/colors";
-import { getUsersWithInterestsThunk } from "@/features/authSlice";
+import {
+  getConnectedUserThunk,
+  getUsersWithInterestsThunk,
+} from "@/features/auth/authSlice";
+import { getReceivedRequests } from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
-import { FlatList, StyleSheet } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
   const dispatch = useAppDispatch();
-  const { usersWithInterests } = useAppSelector((state) => state.auth);
+  const { connectedUsers, isLoading, user } = useAppSelector(
+    (state) => state.auth,
+  );
   useEffect(() => {
+    dispatch(getConnectedUserThunk(user?.uid || ""));
     dispatch(getUsersWithInterestsThunk());
+    dispatch(getReceivedRequests(user?.uid || ""));
   }, [dispatch]);
+
+  if (isLoading === "pending" && !connectedUsers?.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={usersWithInterests}
+        data={connectedUsers}
         renderItem={({ item }) => (
-          <UserCard
-            uid={item.user.uid}
-            name={item.user.first_name + " " + item.user.last_name}
-            image={item.user.avatar}
-            role={item.user.designation}
-            tags={item.interest.join(", ")}
-            connectionReq={item.connectionReq}
+          <ChatItem
+            avatar={item.avatar}
+            name={item.first_name + " " + item.last_name}
+            message={"Hey there! I am using SpiderX."}
+            time={item.createdAt?.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            unread={1}
           />
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.uid}
         ListHeaderComponent={<Header />}
         ListHeaderComponentStyle={{ marginBottom: 20 }}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No connected users found</Text>
+        }
       />
     </SafeAreaView>
   );
@@ -41,5 +62,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 10,
+  },
+  empty: {
+    textAlign: "center",
+    marginTop: 40,
+    color: "#999",
+    fontSize: 15,
   },
 });

@@ -1,4 +1,4 @@
-import { logoutThunk } from "@/features/authSlice";
+import { logoutThunk } from "@/features/auth/authSlice";
 import { persistor } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";

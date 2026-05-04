@@ -1,13 +1,42 @@
 import { COLORS } from "@/constants/colors";
 import { TEXTS } from "@/constants/texts";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useAppDispatch } from "@/store/hooks";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 const Header = () => {
+  const dispatch = useAppDispatch();
+  const [search, setSearch] = React.useState("");
+  const onSearch = () => {
+    if (search.trim().length > 0) {
+      // dispatch(handleConnectedUserSearch({ search: search }));
+    } else {
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.title}>{TEXTS.HOME.GREETING}</Text>
       <Text style={styles.subtitle}>{TEXTS.HOME.SUBTITLE}</Text>
+
+      {/* SEARCH */}
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color="#999" />
+        <TextInput
+          placeholder={TEXTS.CHAT.SEARCH}
+          style={styles.input}
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
     </View>
   );
 };
@@ -33,5 +62,19 @@ const styles = StyleSheet.create({
   viewAll: {
     color: COLORS.primary,
     fontSize: 12,
+  },
+  searchBox: {
+    backgroundColor: "#F1F1F1",
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 40,
+  },
+
+  input: {
+    marginLeft: 8,
+    flex: 1,
   },
 });

@@ -1,15 +1,13 @@
 import { TEXTS } from "@/constants/texts";
-import { getUsersWithInterestsThunk } from "@/features/authSlice";
+import { getConnectedUserThunk } from "@/features/auth/authSlice";
 import {
-  acceptConnectionRequest,
-  fetchConnections,
-  rejectAndRemoveConnectionRequest,
-} from "@/features/connectionSlice";
+  acceptRequest,
+  rejectAndRemoveRequest,
+} from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { User } from "@/types";
 import { Link } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 const InvitationCard = ({
   item,
@@ -23,45 +21,22 @@ const InvitationCard = ({
   const user = useAppSelector((state) => state.auth.user);
   const handleDeclineReq = () => {
     dispatch(
-      rejectAndRemoveConnectionRequest({
+      rejectAndRemoveRequest({
         requestId: item.requestId,
         rejectedUserUid: item?.uid || "",
       }),
-    )
-      .unwrap()
-      .then(() => {
-        Toast.show({
-          type: "success",
-          text1: "Success!",
-          text2: TEXTS.INVITATIONS.DECLINED,
-        });
-        dispatch(getUsersWithInterestsThunk());
-      })
-      .catch((error) => {
-        console.log("error while decline request: ", error);
-      });
+    );
+    // Toast saga handle karche — InvitationCard ma koi .then() ni jarur nathi
   };
 
   const handleAceptReq = () => {
     dispatch(
-      acceptConnectionRequest({
-        requestId: item.requestId,
+      acceptRequest({
         senderUid: item.uid,
         receiverUid: user?.uid || "",
       }),
-    )
-      .unwrap()
-      .then(() => {
-        dispatch(fetchConnections(user?.uid || ""));
-        Toast.show({
-          type: "success",
-          text1: "Success!",
-          text2: TEXTS.INVITATIONS.ACCEPTED,
-        });
-      })
-      .catch((error) => {
-        console.log("error while accept request: ", error);
-      });
+    );
+    dispatch(getConnectedUserThunk(user?.uid || ""));
   };
 
   return (

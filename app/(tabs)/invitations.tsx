@@ -3,9 +3,9 @@ import InvitationCard from "@/components/InvitationCard";
 import TabBar from "@/components/TabsBar";
 import { TEXTS } from "@/constants/texts";
 import {
-  getReceivedConnectionRequests,
-  getSentConnectionRequests,
-} from "@/features/connectionSlice";
+  getReceivedRequests,
+  getSentRequests,
+} from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Tab } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,7 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const InvitationsScreen = () => {
   const [activeTab, setActiveTab] = useState<Tab>("received");
-  const dispach = useAppDispatch();
+  const dispatch = useAppDispatch();
   const { receivedConnectionRequest, isLoading, sendConnectionRequest } =
     useAppSelector((state) => state.connection);
   const user = useAppSelector((state) => state.auth.user);
@@ -30,13 +30,11 @@ const InvitationsScreen = () => {
   useEffect(() => {
     if (!user) return;
     if (activeTab === "received") {
-      dispach(getReceivedConnectionRequests(user.uid));
-      return;
+      dispatch(getReceivedRequests(user.uid));
     } else {
-      dispach(getSentConnectionRequests(user.uid));
+      dispatch(getSentRequests(user.uid));
     }
-  }, [dispach, activeTab, user]);
-
+  }, [dispatch, activeTab, user]);
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />

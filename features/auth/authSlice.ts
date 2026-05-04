@@ -1,6 +1,7 @@
 import { authServices } from "@/firebase/auth";
-import { CreateUser, User } from "@/types";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { connectedUserServices } from "@/firebase/connectedUsers";
+import { Connection, CreateUser, User } from "@/types";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { REHYDRATE } from "redux-persist";
 
 // 🔥 Types
@@ -10,14 +11,15 @@ export interface UsersWithInterests {
     id: string;
     interest: string[];
     user: User;
-    connectionReq: "pending" | "accepted" | "rejected";
+    connectionReqStatus: "pending" | "rejected" | "accepted" | null;
 }
 interface AuthState {
     user: User | null;
     isLoading: "idle" | "pending" | "succeeded" | "failed";
     usersWithInterests?: Array<UsersWithInterests>
-    serachableUser?: Array<UsersWithInterests> | null
-    singleUser?: User
+    singleUser?: User,
+    searchResults?: Array<UsersWithInterests> | null,
+    connectedUsers?: Connection[] | null,
 }
 
 const initialState: AuthState = {
@@ -106,6 +108,18 @@ export const getSingleUserThunk = createAsyncThunk(
     },
 )
 
+export const getConnectedUserThunk = createAsyncThunk(
+    "auth/getConnectedUser",
+    async (uid: string, { rejectWithValue }) => {
+        try {
+            const res = await connectedUserServices.getConnections(uid);
+            return res
+        } catch (error: any) {
+            return rejectWithValue(error.message || "Current user fetch failed");
+        }
+    },
+)
+
 const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -113,22 +127,43 @@ const authSlice = createSlice({
         handleUserSearch: (state, action: { payload: { search: string } }) => {
             const search = action.payload.search.toLowerCase();
 
-            state.serachableUser =
-                state.usersWithInterests
-                    ?.filter((item) =>
-                        item.user.first_name.toLowerCase().includes(search)
-                    )
-                    .sort((a, b) =>
-                        a.user.first_name.localeCompare(b.user.first_name)
-                    )
+            state.searchResults = state.usersWithInterests?.filter((item) =>
+                item.user.first_name.toLowerCase().includes(search)
+            )
+                .sort((a, b) =>
+                    a.user.first_name.localeCompare(b.user.first_name)
+                )
 
-        }
+        },
+        updateConnectionStatus: (
+            state,
+            action: PayloadAction<{ uid: string; status: "pending" | "rejected" | "accepted" | null }>
+        ) => {
+            const user = state.usersWithInterests?.find(
+                (u) => u.user.uid === action.payload.uid
+            );
+            if (user) {
+                user.connectionReqStatus = action.payload.status as any;
+            }
+            state.singleUser = state.singleUser && state.singleUser.uid === action.payload.uid
+                ? { ...state.singleUser, connectionReqStatus: action.payload.status as any }
+                : state.singleUser;
+
+            const searchUser = state.usersWithInterests?.find(
+                (u) => u.user.uid === action.payload.uid
+            );
+            if (searchUser) {
+                searchUser.connectionReqStatus = action.payload.status as any;
+            }
+        },
+
     },
+
     extraReducers: (builder) => {
         builder
             .addCase(REHYDRATE, (state: any, action: any) => {
                 if (action.payload?.auth) {
-                    state.isLoading = "idle"; // ✅ reset loading
+                    state.isLoading = "idle";
                 }
             })
             // create user
@@ -192,7 +227,7 @@ const authSlice = createSlice({
 
                 state.usersWithInterests = action.payload.map((data) => ({
                     id: data.id,
-                    connectionReq: data.connectionReq,
+                    connectionReqStatus: data.connectionReqStatus,
                     user: { ...data.user },
                     interest: data.interest.slice(0, 2),
                 })).filter(u => u.user.uid !== state.user?.uid);
@@ -209,7 +244,6 @@ const authSlice = createSlice({
                 state.isLoading = "succeeded";
                 state.user = null
                 state.usersWithInterests = []
-                state.serachableUser = []
             })
             .addCase(logoutThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
@@ -226,8 +260,21 @@ const authSlice = createSlice({
             .addCase(getSingleUserThunk.rejected, (state, action) => {
                 state.isLoading = "failed";
             })
+
+            // get connected user
+            .addCase(getConnectedUserThunk.pending, (state) => {
+                state.isLoading = "pending";
+            })
+            .addCase(getConnectedUserThunk.fulfilled, (state, action) => {
+                state.isLoading = "succeeded";
+                console.log("action: ", action.payload)
+                state.connectedUsers = action.payload
+            })
+            .addCase(getConnectedUserThunk.rejected, (state, action) => {
+                state.isLoading = "failed";
+            })
     },
 });
 
-export const { handleUserSearch } = authSlice.actions;
+export const { handleUserSearch, updateConnectionStatus} = authSlice.actions;
 export default authSlice.reducer;

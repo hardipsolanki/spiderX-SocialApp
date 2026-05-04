@@ -1,8 +1,13 @@
 import { COLORS } from "@/constants/colors";
+import { useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
+  const recievedInvatationsReq = useAppSelector(
+    ({ connection }) => connection.receivedConnectionRequest,
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -31,13 +36,19 @@ export default function TabsLayout() {
         name="invitations"
         options={{
           title: "Invitations",
-
           tabBarIcon: ({ color }) => (
             <Ionicons name="notifications" size={22} color={color} />
           ),
+          tabBarBadge:
+            recievedInvatationsReq && recievedInvatationsReq?.length > 0
+              ? recievedInvatationsReq?.length
+              : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: "red",
+            color: "white",
+          },
         }}
       />
-
       <Tabs.Screen
         name="search"
         options={{
@@ -48,7 +59,7 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="chat"
         options={{
           title: "Chats",
@@ -56,7 +67,7 @@ export default function TabsLayout() {
             <Ionicons name="chatbubble-outline" size={22} color={color} />
           ),
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="profile"

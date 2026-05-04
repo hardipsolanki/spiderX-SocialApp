@@ -1,3 +1,4 @@
+import { Connection } from '@/types';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { authServices } from './auth';
 
@@ -5,9 +6,7 @@ class ConnectedUserServces {
     private db = firestore();
     private connectionRequestCollection = this.db.collection('connection-request');
     private connectedUsersCollection = this.db.collection('connected-users');
-    private usersCollection = this.db.collection('users');
-    private addInterestsCollection = this.db.collection('user-interests');
-    async acceptConnectionRequest(requestId: string, senderUid: string, receiverUid: string) {
+    async acceptConnectionRequest(senderUid: string, receiverUid: string) {
         try {
             const batch = this.db.batch();
 
@@ -32,47 +31,56 @@ class ConnectedUserServces {
                 ),
             }, { merge: true });
 
+            const requestSnap = await this.connectionRequestCollection
+                .where('send_by', '==', senderRef)
+                .where('received_by', '==', receiverRef)
+                .get();
+            if (requestSnap.empty) throw new Error('Connection request not found');
+
+            const requestId = requestSnap.docs[0].id;
             const requestRef = this.connectionRequestCollection.doc(requestId);
-            batch.delete(requestRef);
+
+            batch.update(requestRef, {
+                connectionReqStatus: "accepted"
+            });
 
             await batch.commit();
-
-            const interestSnap = await this.addInterestsCollection
-                .where('user', '==', senderRef)
-                .get();
-
-            if (!interestSnap.empty) {
-                await this.addInterestsCollection
-                    .doc(interestSnap.docs[0].id)
-                    .set({ connectionReq: 'accepted' }, { merge: true }); 
-            }
-
-            await this.usersCollection
-                .doc(senderUid) 
-                .set({ connectionReq: 'accepted' }, { merge: true });
 
         } catch (error) {
             console.log("error while accept request: ", error)
         }
     }
     async getConnections(uid: string) {
-        const doc = await this.connectedUsersCollection.doc(uid).get();
+        try {
+            const userRef = await authServices.getUserRef(uid);
 
-        if (!doc.exists) return [];
+            const snapshot = await this.connectedUsersCollection
+                .where('connection_of_user', '==', userRef)
+                .get();
 
-        const data = doc.data();
-        const connectionRefs: FirebaseFirestoreTypes.DocumentReference[] = data?.connections || [];
+            if (snapshot.empty) return [];
 
-        if (connectionRefs.length === 0) return [];
+            const connectionsRefs: FirebaseFirestoreTypes.DocumentReference[] =
+                snapshot.docs[0].data().connections || [];
 
-        const users = await Promise.all(
-            connectionRefs.map(async (ref) => {
-                const userSnap = await ref.get();
-                return { uid: userSnap.id, ...userSnap.data() };
-            })
-        );
+            if (connectionsRefs.length === 0) return [];
 
-        return users;
+            const users = await Promise.all(
+                connectionsRefs.map(async (ref) => {
+                    const userSnap = await ref.get();
+                    return {
+                        ...userSnap.data(),
+                        requestId: snapshot.docs[0].id,
+                    } as Connection;
+                })
+            );
+
+            return users;
+
+        } catch (error) {
+            console.error('Error fetching connections:', error);
+            throw error;
+        }
     }
 }
 

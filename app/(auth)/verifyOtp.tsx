@@ -1,16 +1,16 @@
 import CustomButton from "@/components/CustomButton";
 import { TEXTS } from "@/constants/texts";
-import { phoneLoginThunk, verifyOtpThunk } from "@/features/authSlice";
+import { phoneLoginThunk, verifyOtpThunk } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

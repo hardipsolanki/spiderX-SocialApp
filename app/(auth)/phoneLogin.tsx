@@ -1,19 +1,19 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import { TEXTS } from "@/constants/texts";
-import { phoneLoginThunk } from "@/features/authSlice";
+import { phoneLoginThunk } from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

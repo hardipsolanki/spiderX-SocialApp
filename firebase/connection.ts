@@ -3,41 +3,62 @@ import { authServices } from './auth';
 
 class ConnectionService {
     private connectionRequest = firestore().collection('connection-request');
-    private usersCollection = firestore().collection('users');
-    private addInterestsCollection = firestore().collection('user-interests');
 
-    async sendConnectionRequest(senderUid: string, receiverUid: string) {
-        try {
-            const senderUser = await authServices.getUserRef(senderUid)
-            const receiverUser = await authServices.getUserRef(receiverUid)
+   async sendConnectionRequest(senderUid: string, receiverUid: string) {
+    try {
+        const senderUser = await authServices.getUserRef(senderUid);
+        const receiverUser = await authServices.getUserRef(receiverUid);
 
-            await this.connectionRequest.add({
-                send_by: senderUser,
-                received_by: receiverUser,
-                createdAt: firestore.FieldValue.serverTimestamp(),
-            })
+        // A→B check
+        const existingRequestSnapshot = await this.connectionRequest
+            .where('send_by', '==', senderUser)
+            .where('received_by', '==', receiverUser)
+            .get();
 
-            await receiverUser?.update({
-                connectionReq: "pending"
-            })
+        //  B→A check — reverse direction
+        const reverseRequestSnapshot = await this.connectionRequest
+            .where('send_by', '==', receiverUser)
+            .where('received_by', '==', senderUser)
+            .get();
 
-            // also add new filed in user - interests collleciton  conectionReq : "pending"
-            await this.addInterestsCollection.where('user', '==', receiverUser).get().then(async (snapshot) => {
-                if (!snapshot.empty) {
-                    await this.addInterestsCollection.doc(snapshot.docs[0].id).update({
-                        connectionReq: "pending"
-                    })
-                }
-            })
-        } catch (error) {
-            console.error('Error sending connection request:', error);
-            throw error
+        if (!existingRequestSnapshot.empty) {
+            // A→B document already exist — update status
+            const requestId = existingRequestSnapshot.docs[0].id;
+            await this.connectionRequest.doc(requestId).update({
+                connectionReqStatus: 'pending'
+            });
+            return;
         }
+
+        if (!reverseRequestSnapshot.empty) {
+            // B→A document already exist — same document update karo
+            const requestId = reverseRequestSnapshot.docs[0].id;
+            await this.connectionRequest.doc(requestId).update({
+                connectionReqStatus: 'pending',
+                send_by: senderUser,     
+                received_by: receiverUser
+            });
+            return;
+        }
+
+        //  Totally new request — navu document banavo
+        await this.connectionRequest.add({
+            send_by: senderUser,
+            received_by: receiverUser,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            connectionReqStatus: "pending"
+        });
+
+    } catch (error) {
+        console.error('Error sending connection request:', error);
+        throw error;
     }
+}
     async getReceivedConnectionRequests(receiverUid: string) {
         const receiverRef = await authServices.getUserRef(receiverUid)
         const snapshot = await this.connectionRequest
             .where('received_by', '==', receiverRef)
+            .where('connectionReqStatus', '==', 'pending')
             .get();
 
         if (snapshot.empty) return [];
@@ -66,6 +87,7 @@ class ConnectionService {
         const senderRef = await authServices.getUserRef(senderUid)
         const snapshot = await this.connectionRequest
             .where('send_by', '==', senderRef)
+            .where('connectionReqStatus', '==', 'pending')
             .get();
 
         if (snapshot.empty) return [];
@@ -90,21 +112,13 @@ class ConnectionService {
         return sendConnections;
     }
 
-    async rejectAndRenoveConnectionRequest(requestId: string, rejecteUid: string) {
+    async rejectAndRenoveConnectionRequest(requestId: string) {
         try {
-            const receivedUser = await authServices.getUserRef(rejecteUid)
-             await receivedUser?.update({
-                connectionReq: "rejected"
-            })
-            // also add new filed in user - interests collleciton  conectionReq : "pending"
-            await this.addInterestsCollection.where('user', '==', receivedUser).get().then(async (snapshot) => {
-                if (!snapshot.empty) {
-                    await this.addInterestsCollection.doc(snapshot.docs[0].id).update({
-                        connectionReq: "rejected"
-                    })
-                }
-            })
-            await this.connectionRequest.doc(requestId).delete();
+           
+            await this.connectionRequest.doc(requestId).update({
+                connectionReqStatus: "rejected"
+            });
+
         } catch (error) {
             console.error('Error rejecting connection request:', error);
             throw error

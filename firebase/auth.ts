@@ -6,6 +6,7 @@ class Authentication {
     private confirmation: any;
     private usersCollection = firestore().collection('users');
     private addInterestsCollection = firestore().collection('user-interests');
+    private connectionRequest = firestore().collection('connection-request');
     async signInWithPhoneNumber(phoneNumber: string) {
         try {
             const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
@@ -30,7 +31,7 @@ class Authentication {
                 const userDoc = snapshot.docs[0];
                 if (userDoc?.exists()) {
                     const userWithThieInterests = await this.addInterestsCollection.where('user', '==', userDoc.ref).get()
-                    return{
+                    return {
                         ...userDoc.data(),
                         interests: userWithThieInterests.docs[0]?.data().interest ? userWithThieInterests.docs[0]?.data().interest : []
                     }
@@ -40,7 +41,7 @@ class Authentication {
                         .where("phone_number", "==", removePlushAndNineOneFromNumber)
                         .get();
                     if (snapshot.empty) {
-                       await this.usersCollection.add({
+                        await this.usersCollection.add({
                             uid: result.user.uid,
                             phone_number: removePlushAndNineOneFromNumber
                         });
@@ -100,7 +101,6 @@ class Authentication {
                 if (!snapshot.empty) {
                     const userInterests = await this.addInterestsCollection.where('user', '==', snapshot.docs[0].ref).get()
                     if (!userInterests.empty) {
-                        console.log({userInterests})
                         return {
                             ...snapshot.docs[0].data(),
                             interest: userInterests.docs[0].data().interest
@@ -131,16 +131,34 @@ class Authentication {
     async getUsersWithInterests() {
         try {
             const snapshot = await this.addInterestsCollection.get();
+            const currentUser = auth().currentUser;
             const result = await Promise.all(
                 snapshot.docs.map(async (doc) => {
                     const data = doc.data();
                     if (data.user) {
                         const userSnap = await data.user.get()
+                        // based on user data search that pertcular user connection req status in connection request collection
+                        const connectionReqSnap = await this.connectionRequest
+                            .where('send_by', '==', await this.getUserRef(currentUser?.uid || ""))
+                            .where('received_by', '==', data.user)
+                            .get();
+                        const reverseConnectionReqSnap = await this.connectionRequest
+                            .where('send_by', '==', data.user)
+                            .where('received_by', '==', await this.getUserRef(currentUser?.uid || ""))
+                            .get();
+                        let connectionReqStatus: "pending" | "rejected" | "accepted" | "requested" | null = null;
+                        if (!connectionReqSnap.empty) {
+                            connectionReqStatus = connectionReqSnap.docs[0].data().connectionReqStatus;
+                        }
+                        if (!reverseConnectionReqSnap.empty) {
+                            connectionReqStatus = reverseConnectionReqSnap.docs[0].data().connectionReqStatus === "pending" ?
+                                "requested" : reverseConnectionReqSnap.docs[0].data().connectionReqStatus;
+                        }
                         return {
                             id: doc.id,
                             interest: data.interest,
                             user: userSnap.data(),
-                            connectionReq: data.connectionReq
+                            connectionReqStatus: connectionReqStatus
                         };
                     }
                 })
@@ -161,15 +179,38 @@ class Authentication {
             throw error;
         }
     }
-    async getSingleUser (uid: string) {
+    async getSingleUser(uid: string) {
         try {
+            const currentUser = auth().currentUser;
             const snapshot = await this.usersCollection
                 .where("uid", "==", uid)
                 .get();
+
+            // based on user data search that pertcular user connection req status in connection request collection
+            const connectionReqSnap = await this.connectionRequest
+                .where('send_by', '==', await this.getUserRef(currentUser?.uid || ""))
+                .where('received_by', '==', snapshot.docs[0].ref)
+                .get();
+
+            const reverseConnectionReqSnap = await this.connectionRequest
+                .where('send_by', '==', snapshot.docs[0].ref)
+                .where('received_by', '==', await this.getUserRef(currentUser?.uid || ""))
+                .get();
+            let connectionReqStatus: "pending" | "rejected" | "accepted" | "requested" | null = null;
+            if (!connectionReqSnap.empty) {
+                connectionReqStatus = connectionReqSnap.docs[0].data().connectionReqStatus;
+            }
+            if (!reverseConnectionReqSnap.empty) {
+                connectionReqStatus = reverseConnectionReqSnap.docs[0].data().connectionReqStatus === "pending" ?
+                    "requested" : reverseConnectionReqSnap.docs[0].data().connectionReqStatus;
+            }
+
+            const userData = snapshot.docs[0].data();
+
             if (!snapshot.empty) {
                 const userIntrests = await this.addInterestsCollection.where('user', '==', snapshot.docs[0].ref).get()
                 return {
-                    ...snapshot.docs[0].data(),
+                    ...{ ...userData, connectionReqStatus: connectionReqStatus },
                     interest: userIntrests.docs[0].data().interest
                 }
             }
@@ -178,6 +219,7 @@ class Authentication {
             throw error;
         }
     }
+
 
 
 }

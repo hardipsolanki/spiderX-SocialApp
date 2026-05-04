@@ -1,14 +1,9 @@
 import { COLORS } from "@/constants/colors";
-import { getUsersWithInterestsThunk } from "@/features/authSlice";
-import {
-  getSentConnectionRequests,
-  sendConnectionRequest,
-} from "@/features/connectionSlice";
+import { sendConnection } from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface Props {
   name: string;
@@ -16,7 +11,8 @@ interface Props {
   tags: string;
   image: string;
   uid: string;
-  connectionReq: "pending" | "accepted" | "rejected";
+  connectionReqStatus: "pending" | "rejected" | "accepted" | "requested" | null;
+  // isSearchResult?: boolean;
 }
 
 export default function UserCard({
@@ -25,7 +21,7 @@ export default function UserCard({
   tags,
   image,
   uid,
-  connectionReq,
+  connectionReqStatus,
 }: Props) {
   const dispatch = useAppDispatch();
   const { isLoading: connectionLoading } = useAppSelector(
@@ -34,24 +30,11 @@ export default function UserCard({
   const user = useAppSelector((state) => state.auth.user);
   const handleSendToConnection = () => {
     dispatch(
-      sendConnectionRequest({
+      sendConnection({
         sendUserUid: user?.uid || "",
         receiverUid: uid,
       }),
-    )
-      .unwrap()
-      .then(() => {
-        dispatch(getSentConnectionRequests(user?.uid || ""))
-          .unwrap()
-          .then(() => {
-            Toast.show({
-              type: "success",
-              text1: "Success!",
-              text2: "Connection request sent successfully",
-            });
-            dispatch(getUsersWithInterestsThunk());
-          });
-      });
+    );
   };
 
   return (
@@ -77,7 +60,8 @@ export default function UserCard({
 
       {/* RIGHT SIDE BUTTON */}
       {/* TODO when you remove connection just  assign connectionRq = undfined */}
-      {connectionReq !== "pending" && (
+      {/* req is pending -> remove button req is accepted -> remove button req is rejected -> add button show icon */}
+      {(connectionReqStatus === null || connectionReqStatus === "rejected") && (
         <TouchableOpacity
           disabled={connectionLoading === "pending"}
           onPress={handleSendToConnection}

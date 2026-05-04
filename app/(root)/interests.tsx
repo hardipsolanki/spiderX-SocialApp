@@ -18,7 +18,10 @@ import { COLORS } from "@/constants/colors";
 
 import { getInterestWithIcon } from "@/constants/interests";
 import { TEXTS } from "@/constants/texts";
-import { addUserInterest, getInterests } from "@/features/interestSlice";
+import {
+  addUserInterest,
+  getInterests,
+} from "@/features/interest/interestSlice";
 import { authServices } from "@/firebase/auth";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
