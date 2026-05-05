@@ -1,11 +1,8 @@
 import ChatItem from "@/components/ChatItem";
 import Header from "@/components/home/Header";
 import { COLORS } from "@/constants/colors";
-import {
-  getConnectedUserThunk,
-  getUsersWithInterestsThunk,
-} from "@/features/auth/authSlice";
-import { getReceivedRequests } from "@/features/connectionReqest/connectionSlice";
+import { getUsersWithInterestsThunk } from "@/features/auth/authSlice";
+import { fetchChats, handleChatUserSearch } from "@/features/chat/chatSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text } from "react-native";
@@ -13,16 +10,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
   const dispatch = useAppDispatch();
-  const { connectedUsers, isLoading, user } = useAppSelector(
-    (state) => state.auth,
-  );
-  useEffect(() => {
-    dispatch(getConnectedUserThunk(user?.uid || ""));
-    dispatch(getUsersWithInterestsThunk());
-    dispatch(getReceivedRequests(user?.uid || ""));
-  }, [dispatch]);
 
-  if (isLoading === "pending" && !connectedUsers?.length) {
+  const { chats, chatLoading, searchResults } = useAppSelector(
+    (state) => state.chat,
+  );
+  const user = useAppSelector((state) => state.auth.user);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    dispatch(fetchChats(user.uid));
+    dispatch(getUsersWithInterestsThunk());
+  }, [user?.uid]);
+
+  if (chatLoading && !chats.length) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator />
@@ -30,28 +31,39 @@ export default function Home() {
     );
   }
 
+  const onSearch = (text: string) => {
+    dispatch(handleChatUserSearch({ search: text }));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={connectedUsers}
+        data={searchResults.length > 0 ? searchResults : chats}
+        keyExtractor={(item) => item.chatId}
         renderItem={({ item }) => (
           <ChatItem
-            avatar={item.avatar}
-            name={item.first_name + " " + item.last_name}
-            message={"Hey there! I am using SpiderX."}
-            time={item.createdAt?.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            unread={1}
+            avatar={item.otherUser?.avatar}
+            name={
+              item.otherUser
+                ? item.otherUser.first_name + " " + item.otherUser.last_name
+                : "User"
+            }
+            message={item.lastMessage || "Start conversation..."}
+            time={
+              item.lastMessageTime
+                ? new Date(item.lastMessageTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : ""
+            }
+            unread={item.unreadCount} // 🔥 IMPORTANT FIX
+            uid={item.otherUser?.uid}
           />
         )}
-        keyExtractor={(item) => item.uid}
-        ListHeaderComponent={<Header />}
-        ListHeaderComponentStyle={{ marginBottom: 20 }}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No connected users found</Text>
-        }
+        ListHeaderComponent={<Header onSearch={onSearch} />}
+        contentContainerStyle={{ gap: 15 }}
+        ListEmptyComponent={<Text style={styles.empty}>No chats found</Text>}
       />
     </SafeAreaView>
   );

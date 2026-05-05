@@ -36,15 +36,17 @@ export default function SearchBar({
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#F1F1F1",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
-    padding: 10,
-    borderRadius: 10,
+    marginVertical: 10,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 40,
     margin: 10,
   },
   input: {
-    marginLeft: 10,
+    marginLeft: 8,
     flex: 1,
   },
 });

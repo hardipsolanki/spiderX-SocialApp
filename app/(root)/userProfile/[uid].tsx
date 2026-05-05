@@ -1,9 +1,8 @@
-// screens/UserProfileScreen.tsx
+import { COLORS } from "@/constants/colors";
 import {
   getConnectedUserThunk,
   getSingleUserThunk,
 } from "@/features/auth/authSlice";
-import { openOrCreateChat } from "@/features/chat/chatSlice";
 import {
   acceptRequest,
   sendConnection,
@@ -23,19 +22,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-interface UserProfile {
-  name: string;
-  title: string;
-  tags: string[];
-  location: string;
-  email: string;
-  phone: string;
-  memberSince: string;
-  about: string;
-  avatar: string;
-}
 
 const BackButton = ({ onPress }: { onPress: () => void }) => (
   <TouchableOpacity
@@ -66,7 +52,6 @@ const InfoRow = ({ icon, value }: { icon: React.ReactNode; value: string }) => (
   </View>
 );
 
-// ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function UserProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -74,20 +59,11 @@ export default function UserProfileScreen() {
     (state) => state.connection,
   );
   const { uid } = useLocalSearchParams<{ uid: string }>();
-
   const { isLoading, singleUser, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(getSingleUserThunk(uid));
   }, []);
-
-  if (isLoading === "pending") {
-    return (
-      <SafeAreaView>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
-  }
 
   const handleSendToConnection = (sendConnectionuid: string) => {
     dispatch(
@@ -107,32 +83,17 @@ export default function UserProfileScreen() {
     dispatch(getConnectedUserThunk(user?.uid || ""));
   };
 
-  // Connected user ના profile પર "Message" button
-  const handleOpenChat = () => {
-    dispatch(
-      openOrCreateChat({
-        currentUid: user?.uid || "",
-        otherUid: singleUser?.uid || "",
-      }),
+  if (isLoading === "pending") {
+    return (
+      <SafeAreaView>
+        <ActivityIndicator />
+      </SafeAreaView>
     );
-  };
-
-  // Chat open થાય ત્યારે navigate કરો
-  const currentChatId = useAppSelector((state) => state.chat.currentChatId);
-
-  useEffect(() => {
-    if (currentChatId) {
-      router.push({
-        pathname: "/(root)/chat/[uid]",
-        params: { uid: singleUser?.uid },
-      });
-    }
-  }, [currentChatId]);
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -158,24 +119,38 @@ export default function UserProfileScreen() {
             ))}
           </View>
         </View>
-
         {/* Divider */}
         <View style={styles.divider} />
-
         {/* Info Rows */}
         <View style={styles.infoSection}>
           <InfoRow
             icon={
-              <Ionicons name="location-outline" size={18} color="#6C5CE7" />
+              <Ionicons
+                name="location-outline"
+                size={18}
+                color={COLORS.primaryDark}
+              />
             }
             value={singleUser?.location || ""}
           />
           <InfoRow
-            icon={<Ionicons name="mail-outline" size={18} color="#6C5CE7" />}
+            icon={
+              <Ionicons
+                name="mail-outline"
+                size={18}
+                color={COLORS.primaryDark}
+              />
+            }
             value={singleUser?.email || ""}
           />
           <InfoRow
-            icon={<Ionicons name="call-outline" size={18} color="#6C5CE7" />}
+            icon={
+              <Ionicons
+                name="call-outline"
+                size={18}
+                color={COLORS.primaryDark}
+              />
+            }
             value={singleUser?.phone_number || ""}
           />
         </View>
@@ -223,7 +198,7 @@ export default function UserProfileScreen() {
                 onPress={() =>
                   router.push({
                     pathname: "/(root)/chat/[uid]",
-                    params: { uid: singleUser?.uid },
+                    params: { uid: singleUser?.uid || "" },
                   })
                 }
               >
@@ -237,7 +212,6 @@ export default function UserProfileScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,

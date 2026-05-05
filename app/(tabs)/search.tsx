@@ -18,8 +18,6 @@ export default function SearchScreen() {
     }
   };
 
-  console.log({ usersWithInterests });
-
   return (
     <SafeAreaView style={styles.container}>
       {/* 🔍 Header */}

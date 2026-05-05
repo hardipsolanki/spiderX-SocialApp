@@ -1,16 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+interface Props {
+  value: string;
+  onChangeText: (text: string) => void;
+  onSend: () => void;
+}
 
-const ChatInput = () => (
-  <View style={styles.inputContainer}>
-    <TextInput placeholder="Type a message..." style={styles.input} />
+const ChatInput = ({ value, onChangeText, onSend }: Props) => {
+  return (
+    <View style={styles.inputContainer}>
+      <TextInput
+        placeholder="Type a message..."
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        multiline
+      />
 
-    <TouchableOpacity style={styles.sendButton}>
-      <Ionicons name="send" size={20} color="#fff" />
-    </TouchableOpacity>
-  </View>
-);
-
+      <TouchableOpacity
+        style={[styles.sendButton, { opacity: value.trim() ? 1 : 0.5 }]}
+        onPress={onSend}
+        disabled={!value.trim()}
+      >
+        <Ionicons name="send" size={20} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+};
 export default ChatInput;
 
 const styles = StyleSheet.create({

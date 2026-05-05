@@ -31,6 +31,7 @@ export default function RootLayout() {
             name="(root)/invitationSucess"
             options={{ headerShown: false }}
           />
+          <Stack.Screen name="(root)/call" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
         <Toast />

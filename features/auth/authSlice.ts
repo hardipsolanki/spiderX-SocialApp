@@ -267,7 +267,6 @@ const authSlice = createSlice({
             })
             .addCase(getConnectedUserThunk.fulfilled, (state, action) => {
                 state.isLoading = "succeeded";
-                console.log("action: ", action.payload)
                 state.connectedUsers = action.payload
             })
             .addCase(getConnectedUserThunk.rejected, (state, action) => {

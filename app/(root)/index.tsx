@@ -24,7 +24,6 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     dispatch(getCurrentUserThunk());
-    console.log({ user });
     const interval = setInterval(() => {
       if (!user) {
         router.replace("/(auth)/phoneLogin");

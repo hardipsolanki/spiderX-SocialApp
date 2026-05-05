@@ -5,20 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-const Header = () => {
+const Header = ({ onSearch }: { onSearch: (text: string) => void }) => {
   const dispatch = useAppDispatch();
   const [search, setSearch] = React.useState("");
-  const onSearch = () => {
-    if (search.trim().length > 0) {
-      // dispatch(handleConnectedUserSearch({ search: search }));
-    } else {
-    }
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch();
+      onSearch(search);
     }, 300);
+
     return () => clearTimeout(timer);
   }, [search]);
 
@@ -27,7 +22,6 @@ const Header = () => {
       <Text style={styles.title}>{TEXTS.HOME.GREETING}</Text>
       <Text style={styles.subtitle}>{TEXTS.HOME.SUBTITLE}</Text>
 
-      {/* SEARCH */}
       <View style={styles.searchBox}>
         <Ionicons name="search" size={18} color="#999" />
         <TextInput

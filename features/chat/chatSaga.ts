@@ -1,96 +1,161 @@
-// sagas/chatSaga.ts
-import { chatService } from "@/firebase/chatService";
-import { Chat, Message } from "@/types";
-import { eventChannel } from "redux-saga";
-import { call, cancelled, put, take, takeLatest } from "redux-saga/effects";
 import {
-    fetchChats,
-    fetchChatsFailure,
-    fetchChatsSuccess,
-    openOrCreateChat,
-    openOrCreateChatFailure,
-    openOrCreateChatSuccess,
-    sendMessage,
-    sendMessageFailure,
-    sendMessageSuccess,
-    setMessages
-} from "./chatSlice";
+  fetchChats,
+  fetchChatsSuccess,
+  markChatAsRead,
+  openChat,
+  openChatSuccess,
+  sendMessage,
+  sendMessageSuccess,
+  setMessages,
+  startListeningMessages,
+} from "@/features/chat/chatSlice";
+import { chatService } from "@/firebase/chatService";
+import { Message } from "@/types";
+import { eventChannel } from "redux-saga";
+import {
+  call,
+  cancelled,
+  put,
+  take,
+  takeLatest,
+} from "redux-saga/effects";
 
-// ─── Fetch All Chats ───────────────────────────────────────────
-function* handleFetchChats(action: ReturnType<typeof fetchChats>) {
-    try {
-        const chats: Chat[] = yield call(
-            [chatService, chatService.getAllChats],
-            action.payload
-        );
-        yield put(fetchChatsSuccess(chats));
-    } catch (error: any) {
-        yield put(fetchChatsFailure());
-    }
+//
+// ─────────────────────────────────────────────
+// 🔥 REAL-TIME CHAT LIST (WITH UNREAD COUNT)
+// ─────────────────────────────────────────────
+//
+function createChatsChannel(uid: string) {
+  return eventChannel((emit) => {
+    const unsubscribe = chatService.listenChatsWithUnreadCount(
+      uid,
+      (chats) => {
+        emit(chats);
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  });
 }
 
-// ─── Open Or Create Chat ───────────────────────────────────────
-function* handleOpenOrCreateChat(action: ReturnType<typeof openOrCreateChat>) {
-    try {
-        const { currentUid, otherUid } = action.payload;
-        const chatId: string = yield call(
-            [chatService, chatService.getOrCreateChat],
-            currentUid,
-            otherUid
-        );
-        yield put(openOrCreateChatSuccess(chatId));
-    } catch (error: any) {
-        yield put(openOrCreateChatFailure());
+function* handleFetchChats(action: ReturnType<typeof fetchChats>): Generator {
+  if (!action.payload) return;
+
+  const channel = yield call(createChatsChannel, action.payload);
+
+  try {
+    while (true) {
+      const chats = yield take(channel);
+      yield put(fetchChatsSuccess(chats)); // 🔥 updates UI live
     }
+  } finally {
+    if (yield cancelled()) {
+      channel.close();
+    }
+  }
 }
 
-// ─── Send Message ──────────────────────────────────────────────
-function* handleSendMessage(action: ReturnType<typeof sendMessage>) {
-    try {
-        const { chatId, senderUid, text } = action.payload;
-        yield call(
-            [chatService, chatService.sendMessage],
-            chatId,
-            senderUid,
-            text
-        );
-        yield put(sendMessageSuccess());
-    } catch (error: any) {
-        yield put(sendMessageFailure());
-    }
+//
+// ─────────────────────────────────────────────
+// 🟢 OPEN CHAT
+// ─────────────────────────────────────────────
+//
+function* handleOpenChat(action: ReturnType<typeof openChat>): Generator {
+  const { currentUid, otherUid } = action.payload;
+
+  const chatId = yield call(
+    [chatService, chatService.getOrCreateChat],
+    currentUid,
+    otherUid
+  );
+
+  yield put(openChatSuccess(chatId));
+
+  // start listening messages
+  yield put(startListeningMessages(chatId));
 }
 
-// ─── Real Time Messages Listen ─────────────────────────────────
+//
+// ─────────────────────────────────────────────
+// 🟢 SEND MESSAGE
+// ─────────────────────────────────────────────
+//
+function* handleSendMessage(action: ReturnType<typeof sendMessage>): Generator {
+  const { chatId, senderUid, text } = action.payload;
+
+  yield call(
+    [chatService, chatService.sendMessage],
+    chatId,
+    senderUid,
+    text
+  );
+  yield put(
+    sendMessageSuccess({
+      chatId,
+      text,
+    })
+  );
+}
+
+//
+// ─────────────────────────────────────────────
+// 🔵 MESSAGE LISTENER (REAL-TIME)
+// ─────────────────────────────────────────────
+//
 function createMessagesChannel(chatId: string) {
-    return eventChannel((emit) => {
-        // onSnapshot — real time listener
-        const unsubscribe = chatService.listenMessages(chatId, (messages) => {
-            emit(messages);
-        });
-        // Cleanup — channel close થાય ત્યારે unsubscribe
-        return () => unsubscribe();
-    });
+  return eventChannel((emit) => {
+    const unsubscribe = chatService.listenMessages(
+      chatId,
+      (messages) => {
+        emit(messages);
+      }
+    );
+
+    return () => unsubscribe();
+  });
 }
 
-function* handleListenMessages(chatId: string) {
-    const channel: ReturnType<typeof createMessagesChannel> = 
-        yield call(createMessagesChannel, chatId);
-    try {
-        while (true) {
-            const messages: Message[] = yield take(channel);
-            yield put(setMessages(messages));
-        }
-    } finally {
-        // clearChat dispatch થાય ત્યારે channel close
-        if (yield cancelled()) {
-            channel.close();
-        }
+function* handleListenMessages(
+  action: ReturnType<typeof startListeningMessages>
+): Generator {
+  const channel = yield call(createMessagesChannel, action.payload);
+
+  try {
+    while (true) {
+      const messages: Message[] = yield take(channel);
+      yield put(setMessages(messages));
     }
+  } finally {
+    if (yield cancelled()) {
+      channel.close();
+    }
+  }
 }
 
-// ─── Watcher ───────────────────────────────────────────────────
+
+function* handleMarkChatAsRead(
+  action: ReturnType<typeof markChatAsRead>
+): Generator {
+  const { chatId, uid } = action.payload;
+
+  yield call(
+    [chatService, chatService.markMessagesAsRead],
+    chatId,
+    uid
+  );
+}
+
+//
+// ─────────────────────────────────────────────
+// 🚀 ROOT
+// ─────────────────────────────────────────────
+//
 export function* chatSaga() {
-    yield takeLatest(fetchChats.type, handleFetchChats);
-    yield takeLatest(openOrCreateChat.type, handleOpenOrCreateChat);
-    yield takeLatest(sendMessage.type, handleSendMessage);
+  yield takeLatest(fetchChats.type, handleFetchChats);
+  yield takeLatest(openChat.type, handleOpenChat);
+  yield takeLatest(sendMessage.type, handleSendMessage);
+  yield takeLatest(startListeningMessages.type, handleListenMessages);
+  yield takeLatest(markChatAsRead.type, handleMarkChatAsRead);
 }

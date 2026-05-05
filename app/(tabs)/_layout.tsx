@@ -8,6 +8,9 @@ export default function TabsLayout() {
     ({ connection }) => connection.receivedConnectionRequest,
   );
 
+  const chat = useAppSelector((state) => state.chat.chats);
+  const unreadChatsCount = chat.reduce((count, c) => count + c.unreadCount, 0);
+
   return (
     <Tabs
       screenOptions={{
@@ -30,6 +33,11 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={22} color={color} />
           ),
+          tabBarBadge: unreadChatsCount > 0 ? unreadChatsCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: "red",
+            color: "white",
+          },
         }}
       />
       <Tabs.Screen

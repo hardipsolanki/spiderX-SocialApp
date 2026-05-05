@@ -106,14 +106,16 @@ export type Tab = "received" | "sent";
 export interface Message {
     id: string;
     text: string;
-    sentBy: User;
-    createdAt: Date;
+    sentBy: User & { uid: string };
+    createdAt: Date | null;
     isRead: boolean;
 }
 
 export interface Chat {
     chatId: string;
-    otherUser: User;
+    otherUser: User & { uid: string };
     lastMessage: string | null;
+    lastMessageSenderId: string | null;
     lastMessageTime: Date | null;
+    unreadCount: number;
 }

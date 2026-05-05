@@ -7,6 +7,7 @@ interface Props {
   time?: string;
   avatar: string;
   unread?: number;
+  uid: string;
 }
 
 export default function ChatItem({
@@ -15,6 +16,7 @@ export default function ChatItem({
   time,
   avatar,
   unread,
+  uid,
 }: Props) {
   const router = useRouter();
   return (
@@ -23,7 +25,7 @@ export default function ChatItem({
         onPress={() => {
           router.push({
             pathname: "/(root)/chat/[uid]",
-            params: { uid: "123" }, // TODO replace with actual uid
+            params: { uid }, // TODO replace with actual uid
           });
         }}
         style={styles.link}
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
 
   name: {
     fontSize: 15,
-    fontWeight: "600",
+    // fontWeight: "600",
   },
 
   time: {
@@ -94,9 +96,10 @@ const styles = StyleSheet.create({
 
   message: {
     fontSize: 13,
-    color: "#666",
+    // color: "#666",
     flex: 1,
     marginTop: 2,
+    fontWeight: "bold",
   },
 
   badge: {

@@ -12,7 +12,6 @@ interface Props {
   image: string;
   uid: string;
   connectionReqStatus: "pending" | "rejected" | "accepted" | "requested" | null;
-  // isSearchResult?: boolean;
 }
 
 export default function UserCard({
@@ -24,22 +23,64 @@ export default function UserCard({
   connectionReqStatus,
 }: Props) {
   const dispatch = useAppDispatch();
+
   const { isLoading: connectionLoading } = useAppSelector(
     (state) => state.connection,
   );
+
   const user = useAppSelector((state) => state.auth.user);
+
   const handleSendToConnection = () => {
+    if (!user?.uid) return;
+
     dispatch(
       sendConnection({
-        sendUserUid: user?.uid || "",
+        sendUserUid: user.uid,
         receiverUid: uid,
       }),
     );
   };
 
+  // 🔥 Button UI logic
+  const renderButton = () => {
+    switch (connectionReqStatus) {
+      case "pending":
+      case "requested":
+        return (
+          <View style={[styles.button, styles.pendingBtn]}>
+            <Ionicons name="time-outline" size={16} color="#999" />
+          </View>
+        );
+
+      case "accepted":
+        return (
+          <View style={[styles.button, styles.acceptedBtn]}>
+            <Ionicons name="checkmark" size={16} color="#fff" />
+          </View>
+        );
+
+      case "rejected":
+      case null:
+      default:
+        return (
+          <TouchableOpacity
+            disabled={connectionLoading === "pending"}
+            onPress={handleSendToConnection}
+            style={styles.button}
+          >
+            <Ionicons
+              name="person-add-outline"
+              size={16}
+              color={COLORS.primary}
+            />
+          </TouchableOpacity>
+        );
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* LEFT SIDE (Clickable area) */}
+      {/* LEFT SIDE */}
       <Link
         href={{
           pathname: "/(root)/userProfile/[uid]",
@@ -58,40 +99,27 @@ export default function UserCard({
         </TouchableOpacity>
       </Link>
 
-      {/* RIGHT SIDE BUTTON */}
-      {/* TODO when you remove connection just  assign connectionRq = undfined */}
-      {/* req is pending -> remove button req is accepted -> remove button req is rejected -> add button show icon */}
-      {(connectionReqStatus === null || connectionReqStatus === "rejected") && (
-        <TouchableOpacity
-          disabled={connectionLoading === "pending"}
-          onPress={handleSendToConnection}
-          style={styles.button}
-        >
-          <Ionicons
-            name="person-add-outline"
-            size={16}
-            color={COLORS.primary}
-          />
-        </TouchableOpacity>
-      )}
+      {/* RIGHT BUTTON */}
+      {renderButton()}
     </View>
   );
 }
 
+// ---------------- STYLES ----------------
 const styles = StyleSheet.create({
   container: {
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // ✅ important
+    justifyContent: "space-between",
     marginBottom: 16,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
   },
 
   left: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1, // ✅ take remaining space
+    flex: 1,
   },
 
   avatar: {
@@ -127,5 +155,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     marginLeft: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  pendingBtn: {
+    borderColor: "#ccc",
+  },
+
+  acceptedBtn: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
 });
