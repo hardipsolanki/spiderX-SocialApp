@@ -17,10 +17,6 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: "#999",
-        tabBarStyle: {
-          height: 100,
-          paddingBottom: 10,
-        },
         tabBarLabelStyle: {
           fontSize: 12,
         },
@@ -30,19 +26,17 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: "Home",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={22} color={color} />
           ),
           tabBarBadge: unreadChatsCount > 0 ? unreadChatsCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: "red",
-            color: "white",
-          },
         }}
       />
       <Tabs.Screen
         name="invitations"
         options={{
+          tabBarLabel: () => null,
           title: "Invitations",
           tabBarIcon: ({ color }) => (
             <Ionicons name="notifications" size={22} color={color} />
@@ -51,15 +45,12 @@ export default function TabsLayout() {
             recievedInvatationsReq && recievedInvatationsReq?.length > 0
               ? recievedInvatationsReq?.length
               : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: "red",
-            color: "white",
-          },
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
+          tabBarLabel: () => null,
           title: "Search",
           tabBarIcon: ({ color }) => (
             <Ionicons name="search" size={22} color={color} />
@@ -67,20 +58,11 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* <Tabs.Screen
-        name="chat"
-        options={{
-          title: "Chats",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="chatbubble-outline" size={22} color={color} />
-          ),
-        }}
-      /> */}
-
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
+          tabBarLabel: () => null,
           tabBarIcon: ({ color }) => (
             <Ionicons name="person-outline" size={22} color={color} />
           ),

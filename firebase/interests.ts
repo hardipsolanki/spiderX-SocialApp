@@ -1,4 +1,5 @@
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { authServices } from './auth';
 
 class InterestsService {
     private interestsCollection = firestore().collection('interests');
@@ -13,13 +14,46 @@ class InterestsService {
     }
 
     async addUserInterest(userRef: FirebaseFirestoreTypes.DocumentReference, interest: string[]) {
-        try {        
+        try {
             await this.addInterestsCollection.add({
                 user: userRef,
                 interest
             })
         } catch (error) {
             console.error('Error adding user interest:', error);
+        }
+    }
+
+    async updateUserInterest(uid: string, interest: string[]) {
+        try {
+            const userRef = await authServices.getUserRef(uid)
+            if (userRef) {
+                const userInterests = await this.addInterestsCollection.where('user', '==', userRef).get()
+                if (userInterests.empty) throw new Error("User interest not found");
+                const res = await userInterests.docs[0].ref.update({ interest })
+                return res
+
+
+            }
+        } catch (error) {
+            console.log("Error while update user interest: ", error)
+            throw error
+        }
+    }
+    async getUserInterests(uid: string) {
+        try {
+            const userRef = await authServices.getUserRef(uid)
+            if (userRef) {
+                const userInterests = await this.addInterestsCollection.where('user', '==', userRef).get()
+                if (userInterests.empty) throw new Error("User interest not found");
+                const res = {
+                    name: userInterests.docs[0].data().interest
+                }
+                return res
+            }
+        } catch (error) {
+            console.log("Error while get user interest: ", error)
+            throw error
         }
     }
 }

@@ -20,4 +20,5 @@ export const rootReducer = combineReducers({
   interest: interestReducer,
   connection: connectionReducer,
   chat: chatReducer
+  
 });

@@ -33,7 +33,7 @@ export const createUserThunk = createAsyncThunk(
     async (data: CreateUser, { rejectWithValue }) => {
         try {
             const res = await authServices.createProfile(data);
-            return res
+            return res as any
         } catch (error: any) {
             return rejectWithValue(error.message || "Something went wrong");
         }
@@ -156,6 +156,9 @@ const authSlice = createSlice({
                 searchUser.connectionReqStatus = action.payload.status as any;
             }
         },
+        updateUserInterest : (state, action: PayloadAction<{ interest: string[] }>) => {
+            if (state.user) state.user.interest = action.payload.interest
+        }
 
     },
 
@@ -275,5 +278,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { handleUserSearch, updateConnectionStatus} = authSlice.actions;
+export const { handleUserSearch, updateConnectionStatus,updateUserInterest} = authSlice.actions;
 export default authSlice.reducer;

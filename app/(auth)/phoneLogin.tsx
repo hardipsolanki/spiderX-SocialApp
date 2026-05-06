@@ -7,13 +7,12 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -44,7 +43,7 @@ export default function PhoneLogin() {
             text1: "Success",
             text2: "OTP sent successfully",
           });
-          router.replace({
+          router.push({
             pathname: "/(auth)/verifyOtp",
             params: { phone: `+91${data.phone}` },
           });
@@ -72,7 +71,7 @@ export default function PhoneLogin() {
         >
           {/* TOP ILLUSTRATION */}
           <View style={styles.illustrationContainer}>
-            <View style={styles.illustrationCircle}>
+            {/* <View style={styles.illustrationCircle}>
               <Image
                 source={{
                   uri: "https://cdn-icons-png.flaticon.com/512/597/597177.png",
@@ -80,7 +79,7 @@ export default function PhoneLogin() {
                 style={styles.image}
                 resizeMode="contain"
               />
-            </View>
+            </View> */}
           </View>
 
           {/* HEADER */}

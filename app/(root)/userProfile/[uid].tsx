@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   ScrollView,
   StatusBar,
@@ -114,9 +115,13 @@ export default function UserProfileScreen() {
 
           {/* Tags */}
           <View style={styles.tagsRow}>
-            {singleUser?.interest?.map((t) => (
-              <TagPill key={t} label={t} />
-            ))}
+            <FlatList
+              data={singleUser?.interest}
+              renderItem={({ item }) => <TagPill key={item} label={item} />}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tags}
+            />
           </View>
         </View>
         {/* Divider */}
@@ -369,5 +374,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 0.3,
+  },
+  tags: {
+    gap: 8,
   },
 });

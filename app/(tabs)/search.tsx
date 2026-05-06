@@ -1,20 +1,36 @@
 import SearchBar from "@/components/SearchBar";
 import UserCard from "@/components/UserCard";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import React from "react";
+import React, { useState } from "react";
 import { FlatList, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { handleUserSearch } from "../../features/auth/authSlice";
+import {
+  getUsersWithInterestsThunk,
+  handleUserSearch,
+} from "../../features/auth/authSlice";
 
 export default function SearchScreen() {
   const dispatch = useAppDispatch();
   const { searchResults, usersWithInterests } = useAppSelector(
     (state) => state.auth,
   );
+  const [refreshing, setRefreshing] = useState(false);
 
   const onSearch = (text: string) => {
     if (text.trim().length > 0) {
       dispatch(handleUserSearch({ search: text }));
+    }
+  };
+
+  const handlePullToRefresh = async () => {
+    setRefreshing(true);
+    try {
+      dispatch(getUsersWithInterestsThunk()).unwrap();
+      dispatch(handleUserSearch({ search: "" }));
+    } catch (err) {
+      console.log("Refresh error:", err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -39,6 +55,8 @@ export default function SearchScreen() {
             connectionReqStatus={item.connectionReqStatus}
           />
         )}
+        refreshing={refreshing} // ✅ important
+        onRefresh={handlePullToRefresh} // ✅ important
       />
     </SafeAreaView>
   );

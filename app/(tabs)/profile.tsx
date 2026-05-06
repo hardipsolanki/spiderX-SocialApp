@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,6 +23,7 @@ export default function ViewProfile() {
   const handleLogout = async () => {
     await persistor.purge();
     dispatch(logoutThunk());
+    router.dismissAll();
     router.replace("/(auth)/phoneLogin");
   };
 
@@ -67,6 +69,77 @@ export default function ViewProfile() {
           <Text style={styles.about}>{user?.about}</Text>
         </View>
 
+        {/* <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Interests</Text>
+
+          <View style={styles.interestsContainer}>
+            <FlatList
+              data={user?.interest}
+              renderItem={({ item }) => (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{item}</Text>
+                </View>
+              )}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ListEmptyComponent={() => (
+                <Text style={styles.emptyText}>No interests added</Text>
+              )}
+              contentContainerStyle={styles.interestsList}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.updateBtn}
+            onPress={() =>
+              router.push({
+                pathname: "/interests", // your page
+                params: { uid: user?.uid },
+              })
+            }
+          >
+            <Text style={styles.updateBtnText}>
+              {user?.interest?.length ? "Update Interests" : "Add Interests"}
+            </Text>
+          </TouchableOpacity>
+        </View> */}
+        <View style={styles.card}>
+          {/* Header Row */}
+          <View style={styles.cardHeader}>
+            <Text style={styles.sectionTitle}>Interests</Text>
+
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() =>
+                router.push({
+                  pathname: "/interests",
+                  params: { uid: user?.uid },
+                })
+              }
+            >
+              <Ionicons name="pencil" size={18} color="#6C5CE7" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.interestsContainer}>
+            <FlatList
+              data={user?.interest}
+              renderItem={({ item }) => (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{item}</Text>
+                </View>
+              )}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ListEmptyComponent={() => (
+                <Text style={styles.emptyText}>No interests added</Text>
+              )}
+              contentContainerStyle={styles.interestsList}
+            />
+          </View>
+        </View>
         {/* LOGOUT */}
         <TouchableOpacity
           disabled={isLoading === "pending"}
@@ -174,5 +247,54 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "#fff",
     fontWeight: "600",
+  },
+  interestsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: "#6C5CE7",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  tagText: {
+    color: "#FFF",
+    fontSize: 12,
+  },
+  emptyText: {
+    color: "#999",
+    fontSize: 13,
+  },
+  interestsList: {
+    paddingVertical: 8,
+    gap: 8,
+  },
+  updateBtn: {
+    marginTop: 12,
+    backgroundColor: "#6C5CE7",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+
+  updateBtnText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  editBtn: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: "#F1F0FF",
   },
 });

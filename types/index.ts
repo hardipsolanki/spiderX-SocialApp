@@ -85,7 +85,7 @@ export interface User {
     avatar: string;
     about: string;
     connectionReqStatus?: "pending" | "rejected" | "accepted" | "requested" | null;
-    interest?: string[];
+    interest: string[];
 }
 
 export interface UserInterest {

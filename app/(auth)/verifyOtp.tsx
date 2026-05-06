@@ -1,17 +1,24 @@
 import CustomButton from "@/components/CustomButton";
 import { TEXTS } from "@/constants/texts";
-import { phoneLoginThunk, verifyOtpThunk } from "@/features/auth/authSlice";
+import {
+  getCurrentUserThunk,
+  phoneLoginThunk,
+  verifyOtpThunk,
+} from "@/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
+import { OtpInput } from "react-native-otp-entry";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -23,10 +30,9 @@ export default function VerifyOtp() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector((state) => state.auth.isLoading);
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(RESEND_TIMER);
   const [canResend, setCanResend] = useState(false);
-  const inputs = useRef<TextInput[]>([]);
 
   //  Resend countdown timer
   useEffect(() => {
@@ -40,31 +46,21 @@ export default function VerifyOtp() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleChange = (text: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-    if (text && index < OTP_LENGTH - 1) {
-      inputs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (key: string, index: number) => {
-    if (key === "Backspace" && !otp[index] && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
-  };
-
   const handleVerify = async () => {
-    const code = otp.join("");
-    if (code.length !== OTP_LENGTH) return;
-    dispatch(verifyOtpThunk({ phone: phone, otp: code }))
+    dispatch(verifyOtpThunk({ phone: phone, otp }))
       .unwrap()
       .then((result) => {
-        if (result?.avatar) {
-          if (result.interests.length) router.replace("/(tabs)/home");
-          else router.push("/(root)/interests");
-        } else router.replace("/createProfile");
+        dispatch(getCurrentUserThunk()).then((res: any) => {
+          if (res.payload?.avatar) {
+            router.replace("/(tabs)/home");
+          } else {
+            if (!result?.avatar) {
+              router.replace("/createProfile");
+            } else if (result?.interests?.length < 1) {
+              router.replace("/interests");
+            }
+          }
+        });
       })
       .catch((error) => {
         Toast.show({
@@ -99,101 +95,82 @@ export default function VerifyOtp() {
       });
   };
 
-  const isComplete = otp.every((d) => d !== "");
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* ILLUSTRATION */}
-        <View style={styles.illustrationContainer}>
-          <View style={styles.illustrationCircle}>
-            <Image
-              source={{
-                uri: "https://cdn-icons-png.flaticon.com/512/3064/3064155.png",
-              }}
-              style={styles.image}
-              resizeMode="contain"
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <KeyboardAvoidingView
+          style={styles.mainContainer}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.content}>
+            {/* ILLUSTRATION
+          <View style={styles.illustrationContainer}>
+            <View style={styles.illustrationCircle}>
+              <Image
+                source={{
+                  uri: "https://cdn-icons-png.flaticon.com/512/3064/3064155.png",
+                }}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            </View>
+          </View> */}
+
+            {/* HEADER */}
+            <Text style={styles.title}>{TEXTS.OTP.TITLE}</Text>
+            <Text style={styles.subtitle}>
+              {TEXTS.OTP.SUBTITLE}{" "}
+              <Text style={styles.phoneText}> {phone}</Text>
+            </Text>
+
+            {/* OTP BOXES */}
+            <View style={styles.otpContainer}>
+              <OtpInput
+                numberOfDigits={6}
+                onTextChange={(text) => setOtp(text)}
+              />
+            </View>
+
+            {/* RESEND */}
+            <View style={styles.resendRow}>
+              {canResend ? (
+                <TouchableOpacity onPress={handleResend}>
+                  <Text style={styles.resendActive}>Resend OTP</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.resendTimer}>
+                  Resend OTP in{" "}
+                  <Text style={styles.timerCount}>
+                    00:{String(timer).padStart(2, "0")}
+                  </Text>
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* BUTTON */}
+          <View style={styles.buttonContainer}>
+            <CustomButton
+              title={
+                isLoading === "pending" ? "Verifying..." : TEXTS.OTP.BUTTON
+              }
+              onPress={handleVerify}
+              loading={isLoading === "pending"}
+              disabled={isLoading === "pending" || otp.length !== OTP_LENGTH}
             />
           </View>
-        </View>
 
-        {/* HEADER */}
-        <Text style={styles.title}>{TEXTS.OTP.TITLE}</Text>
-        <Text style={styles.subtitle}>
-          {TEXTS.OTP.SUBTITLE} <Text style={styles.phoneText}>+91 {phone}</Text>
-        </Text>
-
-        {/* OTP BOXES */}
-        <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputs.current[index] = ref!) as any}
-              style={[
-                styles.otpBox,
-                digit ? styles.otpBoxFilled : {},
-                index === otp.findIndex((d) => d === "") && styles.otpBoxActive,
-              ]}
-              keyboardType="number-pad"
-              maxLength={1}
-              value={digit}
-              onChangeText={(text) => handleChange(text, index)}
-              onKeyPress={({ nativeEvent }) =>
-                handleKeyPress(nativeEvent.key, index)
-              }
-            />
-          ))}
-        </View>
-
-        {/* RESEND */}
-        <View style={styles.resendRow}>
-          {canResend ? (
-            <TouchableOpacity onPress={handleResend}>
-              <Text style={styles.resendActive}>Resend OTP</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={styles.resendTimer}>
-              Resend OTP in{" "}
-              <Text style={styles.timerCount}>
-                00:{String(timer).padStart(2, "0")}
-              </Text>
+          {/* CHANGE NUMBER */}
+          <TouchableOpacity
+            style={styles.changeNumber}
+            onPress={() => router.replace("/phoneLogin")}
+          >
+            <Text style={styles.changeNumberText}>
+              Wrong number? <Text style={styles.changeNumberLink}>Change</Text>
             </Text>
-          )}
-        </View>
-
-        {/* PROGRESS DOTS */}
-        <View style={styles.progressRow}>
-          {otp.map((digit, i) => (
-            <View
-              key={i}
-              style={[
-                styles.progressDot,
-                digit ? styles.progressDotFilled : {},
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* BUTTON */}
-        <View style={styles.buttonContainer}>
-          <CustomButton
-            title={isLoading === "pending" ? "Verifying..." : TEXTS.OTP.BUTTON}
-            onPress={handleVerify}
-            loading={isLoading === "pending"}
-            disabled={isLoading === "pending" || !isComplete}
-          />
-        </View>
-
-        {/* CHANGE NUMBER */}
-        <TouchableOpacity
-          style={styles.changeNumber}
-          onPress={() => router.push("/phoneLogin")}
-        >
-          <Text style={styles.changeNumberText}>
-            Wrong number? <Text style={styles.changeNumberLink}>Change</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
@@ -204,9 +181,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FB",
   },
 
+  mainContainer: {
+    padding: 24,
+    flex: 1,
+  },
+
   content: {
     flex: 1,
-    padding: 24,
     justifyContent: "center",
   },
 

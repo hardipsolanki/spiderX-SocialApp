@@ -60,7 +60,6 @@ const ChatHeader = ({
         >
           <Feather name="video" size={22} style={styles.icon} />
         </TouchableOpacity>
-        <Ionicons name="ellipsis-vertical" size={22} style={styles.icon} />
       </View>
     </View>
   );

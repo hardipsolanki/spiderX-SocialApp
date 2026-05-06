@@ -58,6 +58,7 @@ export const TEXTS = {
     TITLE: "What are your interests?",
     SUBTITLE: "Select your interests to help us find better connections for you.",
     BUTTON: "Continue",
+    UPDATE: "Update Interests",
     SUCCESS: "Interests saved successfully!",
     LOADING: "Saving your interests...",
   },
