@@ -1,50 +1,229 @@
-# Welcome to your Expo app 👋
+# 📱 Firebase App Store
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A **social networking mobile app** built using **React Native (Expo)** and **Firebase**, featuring real-time chat, user connections, and video calling.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
-   ```bash
-   npm install
-   ```
+- 🔐 Phone Authentication (Firebase Auth)
+- 👤 User Profile Creation & Management
+- 🤝 Send / Accept Connection Requests
+- 💬 Real-time Chat (Firestore)
+- 🔔 Unread Message Count
+- 🔍 User Search
+- 📹 1-to-1 Video / Voice Calling (ZegoCloud)
+- ⚡ Fast state management with Redux Toolkit + Saga
+- 💾 Persistent state using Redux Persist
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🏗️ Tech Stack
 
-In the output, you'll find options to open the app in a
+| Technology          | Usage                     |
+| ------------------- | ------------------------- |
+| React Native (Expo) | Mobile App Development    |
+| Firebase Auth       | Authentication            |
+| Firestore           | Database & Real-time Chat |
+| Redux Toolkit       | State Management          |
+| Redux Saga          | Side Effects Handling     |
+| Redux Persist       | Local Storage             |
+| ZegoCloud SDK       | Video / Voice Calling     |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📂 Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+firebase-app-store
+├── app
+│   ├── (tabs)
+│   │   ├── home.tsx
+│   │   ├── profile.tsx
+│   │   └── search.tsx
+│   ├── (auth)
+│   │   ├── createProfile.tsx
+│   │   └── phoneLogin.tsx
+│   ├── (root)
+│   │   ├── interests.tsx
+│   │   └── userProfile/[uid].tsx
+│   └── _layout.tsx
+├── components
+├── constants
+├── features
+│   ├── auth
+│   ├── chat
+│   └── connectionRequest
+├── firebase
+├── store
+├── types
+└── README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ⚙️ Installation
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+git clone <your-repo-url>
+cd firebase-app-store
+npm install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## ▶️ Run Project
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Run on Android:
+
+```bash
+npx expo run:android
+```
+
+---
+
+## 🔥 Firebase Setup
+
+1. Create Firebase Project
+2. Enable:
+   - Authentication (Phone)
+   - Firestore Database
+
+3. Add Android app in Firebase
+4. Download `google-services.json`
+5. Place it inside:
+
+```
+android/app/google-services.json
+```
+
+---
+
+## 💬 Chat System (Firestore)
+
+- Chats stored in:
+
+```
+chats/{chatId}/messages/{messageId}
+```
+
+- Features:
+  - Real-time messaging
+  - Unread message count
+  - Last message preview
+  - Read receipts (`isRead`)
+
+---
+
+## 📹 Video Calling (ZegoCloud)
+
+### Install
+
+```bash
+npm install @zegocloud/zego-uikit-prebuilt-call-rn
+```
+
+---
+
+### How It Works
+
+- `userID` → Unique per user (IMPORTANT)
+- `callID` → Same for both users (chatId recommended)
+
+```tsx
+<ZegoUIKitPrebuiltCall
+  appID={YOUR_APP_ID}
+  appSign="YOUR_APP_SIGN"
+  userID={user.uid}
+  userName={user.name}
+  callID={chatId}
+  config={ONE_ON_ONE_VIDEO_CALL_CONFIG}
+/>
+```
+
+---
+
+### ⚠️ Important Rules
+
+- ❗ Both users must open call screen
+- ❗ Same `callID` required
+- ❗ Different `userID` required
+- ❗ No auto incoming call (you must trigger via UI/notification)
+
+---
+
+## 🔄 State Management Flow
+
+### Redux + Saga
+
+- UI → Dispatch Action
+- Saga → Handle async (Firebase)
+- Slice → Update Store
+- UI → Auto re-render
+
+---
+
+## 📦 Build APK
+
+```bash
+npx expo run:android
+```
+
+OR
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+---
+
+## 🧠 Key Concepts
+
+### SDK (Software Development Kit)
+
+SDK = Ready-made tools to build features faster
+
+Example:
+
+- Firebase SDK → Auth, DB
+- Zego SDK → Video Call
+
+---
+
+## 🛠️ Future Improvements
+
+- 🔔 Push Notifications (Incoming Calls)
+- 🌐 Online / Offline Status
+- 📁 Media Sharing (Images, Videos)
+- 🔐 End-to-End Encryption
+
+---
+
+## 👨‍💻 Author
+
+**Hardip Solanki**
+
+---
+
+## ⭐ Support
+
+If you like this project:
+
+- ⭐ Star the repo
+- 🍴 Fork it
+- 📢 Share it
+
+---
+
+## 📜 License
+
+MIT License
+
+---
+
+**Happy Coding 🚀**
