@@ -15,10 +15,12 @@ const ChatHeader = ({
   avatar,
   fullname,
   number,
+  chatId,
 }: {
   avatar: string;
   fullname: string;
   number: string;
+  chatId: string;
 }) => {
   const router = useRouter();
 
@@ -52,7 +54,7 @@ const ChatHeader = ({
           onPress={() =>
             router.push({
               pathname: "/call",
-              params: { avatar, name: fullname, number },
+              params: { avatar, name: fullname, number, chatId },
             })
           } // Replace with actual phone number
         >

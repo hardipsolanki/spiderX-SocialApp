@@ -317,6 +317,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ChatHeader
+          chatId={chatId!}
           avatar={otherUser?.avatar || ""}
           number={otherUser?.phone_number || ""}
           fullname={
