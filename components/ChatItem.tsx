@@ -1,3 +1,4 @@
+import { useDebounce } from "@/hooks/useNavigationGuard.ts";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -19,14 +20,18 @@ export default function ChatItem({
   uid,
 }: Props) {
   const router = useRouter();
+  // Usage:
+  const handleClick = useDebounce((routes) => {
+    router.push({
+      pathname: routes,
+      params: { uid },
+    });
+  }, 500);
   return (
     <View style={styles.container}>
       <TouchableOpacity
         onPress={() => {
-          router.push({
-            pathname: "/(root)/chat/[uid]",
-            params: { uid }, // TODO replace with actual uid
-          });
+          handleClick("/(root)/chat/[uid]");
         }}
         style={styles.link}
       >

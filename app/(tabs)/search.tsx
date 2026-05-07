@@ -126,7 +126,7 @@
 //   },
 // });
 
-import UserProfileContent from "@/components/ButtomSheet/Profile";
+import UserProfileContent from "@/components/buttomSheet/Profile";
 import SearchBar from "@/components/SearchBar";
 import UserCard from "@/components/UserCard";
 import {

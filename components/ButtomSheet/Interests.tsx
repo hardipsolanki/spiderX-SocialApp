@@ -60,7 +60,6 @@ export default function EditInterestSheet({
         type: "error",
         text1: "Selection Required",
         text2: "Please select at least 1 interest",
-        position: "bottom",
       });
 
       return;
@@ -79,7 +78,6 @@ export default function EditInterestSheet({
         type: "success",
         text1: "Updated",
         text2: "Interests updated successfully",
-        position: "bottom",
       });
 
       onClose();

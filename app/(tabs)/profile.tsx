@@ -263,7 +263,7 @@
 //   },
 // });
 
-import EditInterestSheet from "@/components/ButtomSheet/Interests";
+import EditInterestSheet from "@/components/buttomSheet/Interests";
 import { logoutThunk } from "@/features/auth/authSlice";
 import { persistor } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
