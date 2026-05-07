@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Home() {
   const dispatch = useAppDispatch();
 
-  const { chats, chatLoading, searchResults } = useAppSelector(
+  const { chats, chatLoading, searchResults, searchText } = useAppSelector(
     (state) => state.chat,
   );
   const user = useAppSelector((state) => state.auth.user);
@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={searchResults.length > 0 ? searchResults : chats}
+        data={searchText ? searchResults : chats}
         keyExtractor={(item) => item.chatId}
         renderItem={({ item }) => (
           <ChatItem

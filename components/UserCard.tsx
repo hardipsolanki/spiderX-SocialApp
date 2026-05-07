@@ -2,7 +2,7 @@ import { COLORS } from "@/constants/colors";
 import { sendConnection } from "@/features/connectionReqest/connectionSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { TouchableWithoutFeedback } from "@gorhom/bottom-sheet";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   image: string;
   uid: string;
   connectionReqStatus: "pending" | "rejected" | "accepted" | "requested" | null;
+  onPress: () => void;
 }
 
 export default function UserCard({
@@ -21,6 +22,7 @@ export default function UserCard({
   image,
   uid,
   connectionReqStatus,
+  onPress,
 }: Props) {
   const dispatch = useAppDispatch();
 
@@ -79,29 +81,29 @@ export default function UserCard({
   };
 
   return (
-    <View style={styles.container}>
+    <TouchableWithoutFeedback onPress={onPress} style={styles.container}>
       {/* LEFT SIDE */}
-      <Link
+      {/* <Link
         href={{
           pathname: "/(root)/userProfile/[uid]",
           params: { uid },
         }}
         asChild
-      >
-        <TouchableOpacity style={styles.left}>
-          <Image source={{ uri: image }} style={styles.avatar} />
+      > */}
+      <TouchableOpacity style={styles.left}>
+        <Image source={{ uri: image }} style={styles.avatar} />
 
-          <View style={styles.info}>
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.role}>{role}</Text>
-            <Text style={styles.tags}>{tags}</Text>
-          </View>
-        </TouchableOpacity>
-      </Link>
+        <View style={styles.info}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.role}>{role}</Text>
+          <Text style={styles.tags}>{tags}</Text>
+        </View>
+      </TouchableOpacity>
+      {/* </Link> */}
 
       {/* RIGHT BUTTON */}
       {renderButton()}
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 

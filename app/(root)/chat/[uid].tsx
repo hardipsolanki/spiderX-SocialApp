@@ -8,7 +8,7 @@ import {
 } from "@/features/chat/chatSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -21,19 +21,28 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
   const { uid } = useLocalSearchParams();
+
   const dispatch = useAppDispatch();
 
   const { messages, chats } = useAppSelector((state) => state.chat);
+
   const chatId = useAppSelector((state) => state.chat.currentChatId);
+
   const user = useAppSelector((state) => state.auth.user);
 
-  const flatListRef = React.useRef<FlatList>(null);
   const [text, setText] = useState("");
 
-  // get user from chats instead of connectedUsers
+  // ✅ Get Current Chat User
   const chat = chats.find((c) => c.otherUser.uid === uid);
+
   const otherUser = chat?.otherUser;
 
+  // ✅ Reverse Messages For Inverted FlatList
+  const reversedMessages = useMemo(() => {
+    return [...messages].reverse();
+  }, [messages]);
+
+  // ✅ Open Chat
   useEffect(() => {
     if (uid && user?.uid) {
       dispatch(
@@ -45,42 +54,28 @@ export default function ChatScreen() {
     }
 
     return () => {
-      // Optional: Clear current chat when leaving screen
       dispatch(clearChat());
     };
-  }, [uid, user?.uid, dispatch]);
+  }, [uid, user?.uid]);
 
-  // Auto scroll to bottom on initial load and new messages
-  const scrollToBottom = useCallback(() => {
-    flatListRef.current?.scrollToEnd({ animated: false });
-  }, []);
-
-  // Scroll to bottom when messages change (initial load or new messages)
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages.length, scrollToBottom]);
-
-  // Mark chat as read when entering screen
+  // ✅ Mark Chat Read
   useEffect(() => {
     if (chatId && user?.uid) {
       dispatch(
         markChatAsRead({
-          chatId: chatId,
+          chatId,
           uid: user.uid,
         }),
       );
     }
-  }, [chatId, user?.uid, dispatch]);
+  }, [chatId, user?.uid]);
 
-  // Mark unread messages as read when new message from other user arrives
+  // ✅ Mark New Incoming Messages As Read
   useEffect(() => {
     if (!chatId || !user?.uid || !messages.length) return;
 
     const lastMessage = messages[messages.length - 1];
 
-    // only mark if message is from OTHER user and unread
     if (lastMessage.sentBy?.uid !== user.uid && !lastMessage.isRead) {
       dispatch(
         markChatAsRead({
@@ -89,15 +84,16 @@ export default function ChatScreen() {
         }),
       );
     }
-  }, [messages, chatId, user?.uid, dispatch]);
+  }, [messages]);
 
+  // ✅ Send Message
   const handleSend = () => {
-    if (!text.trim() || !chatId) return;
+    if (!text.trim() || !chatId || !user?.uid) return;
 
     dispatch(
       sendMessage({
         chatId,
-        senderUid: user?.uid!,
+        senderUid: user.uid,
         text: text.trim(),
       }),
     );
@@ -105,30 +101,36 @@ export default function ChatScreen() {
     setText("");
   };
 
-  const onContentSizeChange = useCallback(() => {
-    // Always scroll to end without animation for instant positioning
-    flatListRef.current?.scrollToEnd({ animated: false });
-  }, []);
-
+  // ✅ Message Bubble
   const renderItem = ({ item }: any) => {
     const isMe = item.sentBy?.uid === user?.uid;
 
     return (
       <View
-        style={[styles.messageContainer, isMe ? styles.sent : styles.received]}
+        style={[
+          styles.messageWrapper,
+          isMe ? styles.sentWrapper : styles.receivedWrapper,
+        ]}
       >
-        <Text style={[styles.messageText, isMe && { color: "#fff" }]}>
-          {item.text}
-        </Text>
-
-        {item.createdAt && (
-          <Text style={styles.time}>
-            {new Date(item.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+        <View
+          style={[
+            styles.messageContainer,
+            isMe ? styles.sent : styles.received,
+          ]}
+        >
+          <Text style={[styles.messageText, isMe && styles.sentText]}>
+            {item.text}
           </Text>
-        )}
+
+          {item.createdAt && (
+            <Text style={[styles.time, isMe && styles.sentTime]}>
+              {new Date(item.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+          )}
+        </View>
       </View>
     );
   };
@@ -136,35 +138,35 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
+        {/* HEADER */}
         <ChatHeader
           chatId={chatId!}
           avatar={otherUser?.avatar || ""}
           number={otherUser?.phone_number || ""}
           fullname={
             otherUser
-              ? otherUser.first_name + " " + otherUser.last_name
+              ? `${otherUser.first_name} ${otherUser.last_name}`
               : "Chat"
           }
         />
 
+        {/* CHAT LIST */}
         <FlatList
-          ref={flatListRef}
-          data={messages}
+          data={reversedMessages}
+          inverted
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 10 }}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={onContentSizeChange}
-          onLayout={onContentSizeChange}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.chatContent}
           removeClippedSubviews={false}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          initialNumToRender={10}
         />
 
+        {/* INPUT */}
         <ChatInput value={text} onChangeText={setText} onSend={handleSend} />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -172,32 +174,78 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 10,
+    backgroundColor: "#F8F9FB",
   },
+
+  chatContent: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+
+  // Wrapper
+  messageWrapper: {
+    marginVertical: 4,
+    flexDirection: "row",
+  },
+
+  sentWrapper: {
+    justifyContent: "flex-end",
+  },
+
+  receivedWrapper: {
+    justifyContent: "flex-start",
+  },
+
+  // Bubble
   messageContainer: {
-    maxWidth: "75%",
-    padding: 10,
-    borderRadius: 10,
-    marginVertical: 5,
+    maxWidth: "78%",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
   },
+
   sent: {
-    alignSelf: "flex-end",
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#6C5CE7",
+
+    borderBottomRightRadius: 4,
   },
+
   received: {
-    alignSelf: "flex-start",
-    backgroundColor: "#f1f1f1",
+    backgroundColor: "#FFFFFF",
+
+    borderBottomLeftRadius: 4,
+
+    borderWidth: 1,
+    borderColor: "#ECECEC",
   },
+
+  // Text
   messageText: {
-    color: "#000",
+    fontSize: 15,
+    color: "#111827",
+    lineHeight: 22,
   },
+
+  sentText: {
+    color: "#FFFFFF",
+  },
+
+  // Time
   time: {
     fontSize: 10,
-    marginTop: 5,
-    color: "gray",
+    color: "#6B7280",
     alignSelf: "flex-end",
+    marginTop: 6,
+  },
+
+  sentTime: {
+    color: "rgba(255,255,255,0.7)",
   },
 });

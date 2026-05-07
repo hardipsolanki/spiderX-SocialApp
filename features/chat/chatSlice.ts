@@ -8,6 +8,7 @@ interface ChatState {
   chatLoading: boolean;
   messageSending: boolean;
   searchResults: Chat[];
+  searchText: string
 }
 
 const initialState: ChatState = {
@@ -17,6 +18,7 @@ const initialState: ChatState = {
   searchResults: [],
   chatLoading: false,
   messageSending: false,
+  searchText: '',
 };
 
 const chatSlice = createSlice({
@@ -94,19 +96,23 @@ const chatSlice = createSlice({
       state,
       action: { payload: { search: string } }
     ) => {
-      const search = action.payload.search.toLowerCase();
+      const search = action.payload.search.toLowerCase().trim();
 
-      if (!search) {
+      state.searchText = search;
+
+      if (search === "") {
         state.searchResults = [];
         return;
       }
 
       state.searchResults = state.chats.filter((item) =>
-        `${item.otherUser?.first_name} ${item.otherUser?.last_name}`
+        `${item.otherUser?.first_name || ""} ${item.otherUser?.last_name || ""
+          }`
           .toLowerCase()
           .includes(search)
       );
     },
+
   },
 });
 

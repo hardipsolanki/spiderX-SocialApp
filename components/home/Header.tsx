@@ -1,6 +1,6 @@
 import { COLORS } from "@/constants/colors";
 import { TEXTS } from "@/constants/texts";
-import { useAppDispatch } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -8,6 +8,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 const Header = ({ onSearch }: { onSearch: (text: string) => void }) => {
   const dispatch = useAppDispatch();
   const [search, setSearch] = React.useState("");
+  const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,7 +20,9 @@ const Header = ({ onSearch }: { onSearch: (text: string) => void }) => {
 
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.title}>{TEXTS.HOME.GREETING}</Text>
+      <Text style={styles.title}>
+        Hii 🤞 {user?.first_name + " " + user?.last_name || TEXTS.HOME.GREETING}
+      </Text>
       <Text style={styles.subtitle}>{TEXTS.HOME.SUBTITLE}</Text>
 
       <View style={styles.searchBox}>

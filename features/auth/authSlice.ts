@@ -18,12 +18,14 @@ interface AuthState {
     isLoading: "idle" | "pending" | "succeeded" | "failed";
     usersWithInterests?: Array<UsersWithInterests>
     singleUser?: User,
+    searchText: string
     searchResults?: Array<UsersWithInterests> | null,
     connectedUsers?: Connection[] | null,
 }
 
 const initialState: AuthState = {
     user: null,
+    searchText: "",
     isLoading: "idle",
 };
 
@@ -124,16 +126,25 @@ const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        handleUserSearch: (state, action: { payload: { search: string } }) => {
-            const search = action.payload.search.toLowerCase();
+        handleUserSearch: (
+            state,
+            action: { payload: { search: string } }
+        ) => {
+            const search = action.payload.search.toLowerCase().trim();
+
+            state.searchText = search;
+
+            if (search === "") {
+                state.searchResults = [];
+                return;
+            }
 
             state.searchResults = state.usersWithInterests?.filter((item) =>
-                item.user.first_name.toLowerCase().includes(search)
-            )
-                .sort((a, b) =>
-                    a.user.first_name.localeCompare(b.user.first_name)
-                )
-
+        `${item?.user.first_name || ""} ${item.user?.last_name || ""
+          }`
+          .toLowerCase()
+          .includes(search)
+      );
         },
         updateConnectionStatus: (
             state,
@@ -156,7 +167,7 @@ const authSlice = createSlice({
                 searchUser.connectionReqStatus = action.payload.status as any;
             }
         },
-        updateUserInterest : (state, action: PayloadAction<{ interest: string[] }>) => {
+        updateUserInterest: (state, action: PayloadAction<{ interest: string[] }>) => {
             if (state.user) state.user.interest = action.payload.interest
         }
 
@@ -278,5 +289,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { handleUserSearch, updateConnectionStatus,updateUserInterest} = authSlice.actions;
+export const { handleUserSearch, updateConnectionStatus, updateUserInterest } = authSlice.actions;
 export default authSlice.reducer;

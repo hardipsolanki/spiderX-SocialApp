@@ -6,7 +6,6 @@ import { updateUserInterestFulfilledAction, updateUserInterestRejectedAction, up
 
 function* updateUserInterests (action: any) {
     try {
-        console.log({action})
           yield call(
                     [interestsService, interestsService.updateUserInterest],
                     action.payload.uid,
