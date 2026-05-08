@@ -14,7 +14,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import React, { useCallback, useMemo, useRef } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import UserProfileContent from "./buttomSheet/Profile";
+import UserProfileContent from "./ButtomSheet/Profile";
 
 const InvitationCard = ({
   item,
